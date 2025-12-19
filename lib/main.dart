@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
+import 'package:webview_flutter/webview_flutter.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,8 +24,8 @@ class GameSwipeApp extends StatelessWidget {
 }
 
 final videos = [
-  {'id': 1, 'title': 'Slither.io', 'video': 'assets/videos/Game1.mov', 'gameUrl': 'http://slither.io'},
-  {'id': 2, 'title': 'Game 2', 'video': 'assets/videos/Game2.mov', 'gameUrl': 'http://example.com'},
+  {'id': 1, 'title': 'Slither.io', 'video': 'assets/videos/Game1.mov', 'gameUrl': 'https://slither.io/'},
+  {'id': 2, 'title': 'Bloxd.io', 'video': 'assets/videos/Game2.mov', 'gameUrl': 'https://bloxd.io/'},
 ];
 
 class FeedScreen extends StatefulWidget {
@@ -40,7 +41,12 @@ class _FeedScreenState extends State<FeedScreen> {
   void onSwipeLeft() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => GameScreen(title: videos[currentIndex]['title'] as String)),
+      MaterialPageRoute(
+        builder: (context) => GameScreen(
+          title: videos[currentIndex]['title'] as String,
+          gameUrl: videos[currentIndex]['gameUrl'] as String,
+        ),
+      ),
     );
   }
 
@@ -115,7 +121,6 @@ class _VideoCardState extends State<VideoCard> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        // Video
         Container(
           color: Colors.black,
           child: isInitialized
@@ -127,8 +132,6 @@ class _VideoCardState extends State<VideoCard> {
                 )
               : const Center(child: CircularProgressIndicator(color: Colors.white)),
         ),
-
-        // Title overlay
         Positioned(
           bottom: 100,
           left: 16,
@@ -137,8 +140,6 @@ class _VideoCardState extends State<VideoCard> {
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
         ),
-
-        // Swipe hint
         Positioned(
           right: 16,
           bottom: 100,
@@ -158,9 +159,31 @@ class _VideoCardState extends State<VideoCard> {
   }
 }
 
-class GameScreen extends StatelessWidget {
+class GameScreen extends StatefulWidget {
   final String title;
-  const GameScreen({super.key, required this.title});
+  final String gameUrl;
+
+  const GameScreen({super.key, required this.title, required this.gameUrl});
+
+  @override
+  State<GameScreen> createState() => _GameScreenState();
+}
+
+class _GameScreenState extends State<GameScreen> {
+  late WebViewController controller;
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    controller = WebViewController()
+      ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1')
+      ..setNavigationDelegate(NavigationDelegate(
+        onPageFinished: (_) => setState(() => isLoading = false),
+      ))
+      ..loadRequest(Uri.parse(widget.gameUrl));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -172,10 +195,19 @@ class GameScreen extends StatelessWidget {
           icon: const Icon(Icons.close),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text(title),
+        title: Text(widget.title),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: () => controller.reload(),
+          ),
+        ],
       ),
-      body: const Center(
-        child: Text('Destination App', style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+      body: Stack(
+        children: [
+          WebViewWidget(controller: controller),
+          if (isLoading) const Center(child: CircularProgressIndicator(color: Colors.purple)),
+        ],
       ),
     );
   }
