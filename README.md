@@ -97,11 +97,10 @@ gameswipe-frontend/
 
 ### 1. Record gameplay
 
-1. Open the game in your browser
-2. Press **Cmd + Shift + 5** on Mac
-3. Select **Record Selected Portion**
-4. Record 10-15 seconds of gameplay
-5. Click **Stop**
+1. Open game in your browser on your phone
+2. Start game
+3. Begin Recording and record a video for 10sec
+4. Save it locally 
 
 ### 2. Add to project
 
@@ -180,4 +179,4 @@ git push origin feature/your-feature-name
 
 ---
 
-Built by Bhargav & team 🚀
+Built by Varin & Bhargav
