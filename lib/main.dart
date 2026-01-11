@@ -7,15 +7,21 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-  runApp(const GameSwipeApp());
+
+  final prefs = await SharedPreferences.getInstance();
+  final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+
+  runApp(GameSwipeApp(showOnboarding: !onboardingComplete));
 }
 
 class GameSwipeApp extends StatelessWidget {
-  const GameSwipeApp({super.key});
+  final bool showOnboarding;
+  const GameSwipeApp({super.key, required this.showOnboarding});
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +29,333 @@ class GameSwipeApp extends StatelessWidget {
       title: 'GameSwipe',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      home: const FeedScreen(),
+      home: showOnboarding ? const OnboardingScreen() : const FeedScreen(),
+    );
+  }
+}
+
+// ============================================
+// ONBOARDING SCREEN
+// ============================================
+
+class OnboardingScreen extends StatefulWidget {
+  const OnboardingScreen({super.key});
+
+  @override
+  State<OnboardingScreen> createState() => _OnboardingScreenState();
+}
+
+class _OnboardingScreenState extends State<OnboardingScreen>
+    with SingleTickerProviderStateMixin {
+  final PageController _pageController = PageController();
+  final TextEditingController _nicknameController = TextEditingController();
+  String _nickname = '';
+
+  late AnimationController _slideController;
+  late Animation<Offset> _slideAnimation;
+  bool _isExiting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _slideController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _slideAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(0, -1), // Slide up off screen
+    ).animate(CurvedAnimation(
+      parent: _slideController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _slideController.dispose();
+    _pageController.dispose();
+    _nicknameController.dispose();
+    super.dispose();
+  }
+
+  void _goToNextPage() {
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
+
+  Future<void> _completeOnboarding() async {
+    if (_isExiting) return;
+    _isExiting = true;
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('onboarding_complete', true);
+    await prefs.setString('user_nickname', _nickname);
+
+    // Animate slide up, then navigate
+    await _slideController.forward();
+
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        PageRouteBuilder(
+          pageBuilder: (context, animation, secondaryAnimation) => const FeedScreen(),
+          transitionDuration: Duration.zero,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
+        child: PageView(
+          controller: _pageController,
+          physics: const NeverScrollableScrollPhysics(),
+          children: [
+            _buildNicknamePage(),
+            _buildSwipeTutorialPage(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNicknamePage() {
+    return Padding(
+      padding: const EdgeInsets.all(32),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            'Create Your\nNickname',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: Colors.black,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'This will be shown on leaderboards',
+            style: TextStyle(fontSize: 16, color: Colors.grey),
+          ),
+          const SizedBox(height: 48),
+          TextField(
+            controller: _nicknameController,
+            onChanged: (value) => setState(() => _nickname = value),
+            style: const TextStyle(color: Colors.black, fontSize: 18),
+            textCapitalization: TextCapitalization.words,
+            decoration: InputDecoration(
+              hintText: 'Enter nickname...',
+              hintStyle: TextStyle(color: Colors.grey[400]),
+              filled: true,
+              fillColor: Colors.grey[100],
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            ),
+          ),
+          const SizedBox(height: 32),
+          SizedBox(
+            width: double.infinity,
+            height: 56,
+            child: ElevatedButton(
+              onPressed: _nickname.length >= 2 ? _goToNextPage : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                disabledBackgroundColor: Colors.grey[300],
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text(
+                'Continue',
+                style: TextStyle(fontSize: 18, color: Colors.white),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSwipeTutorialPage() {
+    return SlideTransition(
+      position: _slideAnimation,
+      child: GestureDetector(
+        onVerticalDragEnd: (details) {
+          // Detect swipe up (negative velocity means upward)
+          if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
+            _completeOnboarding();
+          }
+        },
+        child: Container(
+          color: Colors.white,
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            children: [
+              const Spacer(flex: 2),
+              const Text(
+                'Swipe up to start\nwatching',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 48),
+              const SwipeUpAnimation(),
+              const Spacer(flex: 3),
+              // Chevrons at bottom center
+              const PulsingChevrons(),
+              const SizedBox(height: 48),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================
+// SWIPE UP ANIMATION
+// ============================================
+
+class SwipeUpAnimation extends StatefulWidget {
+  const SwipeUpAnimation({super.key});
+
+  @override
+  State<SwipeUpAnimation> createState() => _SwipeUpAnimationState();
+}
+
+class _SwipeUpAnimationState extends State<SwipeUpAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat();
+
+    // Hand moves UP: starts at bottom (0) and moves up (60)
+    _slideAnimation = Tween<double>(begin: 0, end: 60).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    // Fade out as hand moves up
+    _opacityAnimation = Tween<double>(begin: 1, end: 0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.5, 1.0)),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 200,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Phone mockup
+          Container(
+            width: 100,
+            height: 160,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Icon(Icons.play_arrow, size: 40, color: Colors.grey[500]),
+            ),
+          ),
+          // Animated hand
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Positioned(
+                right: 60,
+                bottom: 20 + _slideAnimation.value,
+                child: Opacity(
+                  opacity: _opacityAnimation.value,
+                  child: const Icon(
+                    Icons.touch_app,
+                    size: 48,
+                    color: Colors.black87,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================
+// PULSING CHEVRONS
+// ============================================
+
+class PulsingChevrons extends StatefulWidget {
+  const PulsingChevrons({super.key});
+
+  @override
+  State<PulsingChevrons> createState() => _PulsingChevronsState();
+}
+
+class _PulsingChevronsState extends State<PulsingChevrons>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: 0.3 + (_controller.value * 0.7),
+          child: Transform.translate(
+            offset: Offset(0, -_controller.value * 5),
+            child: const Column(
+              children: [
+                Icon(Icons.keyboard_arrow_up, size: 32, color: Colors.grey),
+                Icon(Icons.keyboard_arrow_up, size: 32, color: Colors.grey),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }
