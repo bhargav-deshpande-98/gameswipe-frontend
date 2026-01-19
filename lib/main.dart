@@ -17,17 +17,17 @@ void main() async {
   final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
   await LikedGamesService.init();
 
-  runApp(GameSwipeApp(showOnboarding: !onboardingComplete));
+  runApp(PlaybiteApp(showOnboarding: !onboardingComplete));
 }
 
-class GameSwipeApp extends StatelessWidget {
+class PlaybiteApp extends StatelessWidget {
   final bool showOnboarding;
-  const GameSwipeApp({super.key, required this.showOnboarding});
+  const PlaybiteApp({super.key, required this.showOnboarding});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'GameSwipe',
+      title: 'Playbite',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
       home: showOnboarding ? const OnboardingScreen() : const HomeScreen(),

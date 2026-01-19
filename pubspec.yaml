@@ -1,4 +1,4 @@
-name: gameswipe
+name: playbite
 description: TikTok for Games
 
 publish_to: 'none'
@@ -24,3 +24,4 @@ flutter:
   uses-material-design: true
   assets:
     - assets/videos/
+    - assets/logo/
