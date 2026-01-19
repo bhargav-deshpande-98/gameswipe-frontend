@@ -374,6 +374,7 @@ final videos = [
   {'id': 11, 'title': 'Snake', 'video': 'assets/videos/Game11.mov', 'gameUrl': 'https://slither-io-game.vercel.app/'},
   {'id': 12, 'title': 'Hero Stick', 'video': 'assets/videos/Game12.mov', 'gameUrl': 'https://stick-hero-game-ten.vercel.app/'},
   {'id': 13, 'title': 'Jelly Jump', 'video': 'assets/videos/jellyjump.mov', 'gameUrl': 'https://jelly-jump-reborn.vercel.app/'},
+  {'id': 14, 'title': 'Swing Copters', 'video': 'assets/videos/swing_copters.mov', 'gameUrl': 'https://sky-hopper-clone.vercel.app/'},
 ];
 
 class FeedScreen extends StatefulWidget {
