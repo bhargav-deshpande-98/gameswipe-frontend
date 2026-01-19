@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle with subtle purple/lavender gradient -->
+  <defs>
+    <linearGradient id="bgGradientDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F093FB;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F5576C;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="hoodieGradientDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7EB8C9;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#5A9AAD;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="hairGradientDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#8B6B4D;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6B4D35;stop-opacity:1" />
+    </linearGradient>
+    <!-- Mask for the bite -->
+    <mask id="biteMaskDark">
+      <rect width="512" height="512" fill="white"/>
+      <circle cx="440" cy="72" r="70" fill="black"/>
+    </mask>
+  </defs>
+
+  <!-- Main circle with bite taken out -->
+  <g mask="url(#biteMaskDark)">
+    <circle cx="256" cy="256" r="240" fill="url(#bgGradientDark)"/>
+  </g>
+
+  <!-- Chibi gamer character -->
+  <g transform="translate(256, 275) scale(1.25)">
+    <!-- Body/Hoodie -->
+    <path d="M-70 40 Q-80 100 -60 120 L60 120 Q80 100 70 40 Q50 20 0 20 Q-50 20 -70 40 Z" fill="url(#hoodieGradientDark)" stroke="#4A8A9D" stroke-width="3"/>
+
+    <!-- Hoodie collar/neck -->
+    <path d="M-25 20 Q0 35 25 20 L20 40 Q0 50 -20 40 Z" fill="#9ED0DE"/>
+
+    <!-- Arms holding phone -->
+    <ellipse cx="-55" cy="75" rx="18" ry="25" fill="url(#hoodieGradientDark)" stroke="#4A8A9D" stroke-width="2"/>
+    <ellipse cx="55" cy="75" rx="18" ry="25" fill="url(#hoodieGradientDark)" stroke="#4A8A9D" stroke-width="2"/>
+
+    <!-- Hands -->
+    <ellipse cx="-40" cy="85" rx="12" ry="10" fill="#F5D0C5"/>
+    <ellipse cx="40" cy="85" rx="12" ry="10" fill="#F5D0C5"/>
+
+    <!-- Phone/Device -->
+    <rect x="-35" y="65" width="70" height="40" rx="6" fill="#9B8ABD" stroke="#7A6A9D" stroke-width="2"/>
+    <rect x="-28" y="72" width="56" height="26" rx="3" fill="#C5E8F0"/>
+
+    <!-- Head -->
+    <ellipse cx="0" cy="-25" rx="65" ry="60" fill="#F5D0C5" stroke="#E0B8A8" stroke-width="2"/>
+
+    <!-- Hair (curly) -->
+    <ellipse cx="0" cy="-65" rx="55" ry="35" fill="url(#hairGradientDark)"/>
+    <circle cx="-35" cy="-55" r="18" fill="url(#hairGradientDark)"/>
+    <circle cx="35" cy="-55" r="18" fill="url(#hairGradientDark)"/>
+    <circle cx="-20" cy="-75" r="15" fill="url(#hairGradientDark)"/>
+    <circle cx="20" cy="-75" r="15" fill="url(#hairGradientDark)"/>
+    <circle cx="0" cy="-80" r="14" fill="url(#hairGradientDark)"/>
+    <circle cx="-45" cy="-40" r="12" fill="url(#hairGradientDark)"/>
+    <circle cx="45" cy="-40" r="12" fill="url(#hairGradientDark)"/>
+
+    <!-- Headphones band -->
+    <path d="M-60 -30 Q-65 -70 -40 -85 Q0 -100 40 -85 Q65 -70 60 -30" fill="none" stroke="#2D2D2D" stroke-width="8" stroke-linecap="round"/>
+
+    <!-- Left headphone -->
+    <ellipse cx="-62" cy="-15" rx="15" ry="22" fill="#2D2D2D" stroke="#1A1A1A" stroke-width="2"/>
+    <ellipse cx="-62" cy="-15" rx="10" ry="16" fill="#404040"/>
+
+    <!-- Right headphone -->
+    <ellipse cx="62" cy="-15" rx="15" ry="22" fill="#2D2D2D" stroke="#1A1A1A" stroke-width="2"/>
+    <ellipse cx="62" cy="-15" rx="10" ry="16" fill="#404040"/>
+
+    <!-- Eyes -->
+    <ellipse cx="-22" cy="-20" rx="14" ry="16" fill="white"/>
+    <ellipse cx="22" cy="-20" rx="14" ry="16" fill="white"/>
+    <circle cx="-20" cy="-18" r="8" fill="#5C4A3A"/>
+    <circle cx="24" cy="-18" r="8" fill="#5C4A3A"/>
+    <circle cx="-18" cy="-20" r="3" fill="white"/>
+    <circle cx="26" cy="-20" r="3" fill="white"/>
+
+    <!-- Eyebrows -->
+    <path d="M-32 -38 Q-22 -42 -12 -38" fill="none" stroke="#5C4A3A" stroke-width="3" stroke-linecap="round"/>
+    <path d="M12 -38 Q22 -42 32 -38" fill="none" stroke="#5C4A3A" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Smile -->
+    <path d="M-12 5 Q0 15 12 5" fill="none" stroke="#5C4A3A" stroke-width="3" stroke-linecap="round"/>
+
+    <!-- Cheek blush -->
+    <ellipse cx="-35" cy="0" rx="10" ry="6" fill="#F0A0A0" opacity="0.5"/>
+    <ellipse cx="35" cy="0" rx="10" ry="6" fill="#F0A0A0" opacity="0.5"/>
+  </g>
+</svg>
