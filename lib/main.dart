@@ -15,6 +15,7 @@ void main() async {
 
   final prefs = await SharedPreferences.getInstance();
   final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
+  await LikedGamesService.init();
 
   runApp(GameSwipeApp(showOnboarding: !onboardingComplete));
 }
@@ -29,7 +30,7 @@ class GameSwipeApp extends StatelessWidget {
       title: 'GameSwipe',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      home: showOnboarding ? const OnboardingScreen() : const FeedScreen(),
+      home: showOnboarding ? const OnboardingScreen() : const HomeScreen(),
     );
   }
 }
@@ -122,7 +123,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const FeedScreen(),
+          pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
           transitionDuration: Duration.zero,
         ),
       );
@@ -562,6 +563,111 @@ class _PulsingLeftChevronsState extends State<PulsingLeftChevrons>
   }
 }
 
+// ============================================
+// LIKED GAMES SERVICE
+// ============================================
+
+class LikedGamesService {
+  static const String _key = 'liked_games';
+  static Set<int> _likedGameIds = {};
+  static bool _initialized = false;
+
+  static Future<void> init() async {
+    if (_initialized) return;
+    final prefs = await SharedPreferences.getInstance();
+    final likedList = prefs.getStringList(_key) ?? [];
+    _likedGameIds = likedList.map((e) => int.parse(e)).toSet();
+    _initialized = true;
+  }
+
+  static bool isLiked(int gameId) {
+    return _likedGameIds.contains(gameId);
+  }
+
+  static Future<void> toggleLike(int gameId) async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_likedGameIds.contains(gameId)) {
+      _likedGameIds.remove(gameId);
+    } else {
+      _likedGameIds.add(gameId);
+    }
+    await prefs.setStringList(_key, _likedGameIds.map((e) => e.toString()).toList());
+  }
+
+  static List<Map<String, dynamic>> getLikedGames() {
+    return videos.where((v) => _likedGameIds.contains(v['id'])).toList();
+  }
+}
+
+// ============================================
+// HOME SCREEN WITH TABS
+// ============================================
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  int _selectedTab = 0; // 0 = Feed, 1 = Liked Games
+
+  void _onLikeChanged() {
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Stack(
+        children: [
+          // Content
+          _selectedTab == 0
+              ? FeedScreen(onLikeChanged: _onLikeChanged)
+              : LikedGamesScreen(onLikeChanged: _onLikeChanged),
+          // Top tabs
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            left: 0,
+            right: 0,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                GestureDetector(
+                  onTap: () => setState(() => _selectedTab = 0),
+                  child: Text(
+                    'Feed',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: _selectedTab == 0 ? FontWeight.bold : FontWeight.normal,
+                      color: _selectedTab == 0 ? Colors.white : Colors.white60,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                const Text('|', style: TextStyle(color: Colors.white60)),
+                const SizedBox(width: 8),
+                GestureDetector(
+                  onTap: () => setState(() => _selectedTab = 1),
+                  child: Text(
+                    'Liked Games',
+                    style: TextStyle(
+                      fontSize: 17,
+                      fontWeight: _selectedTab == 1 ? FontWeight.bold : FontWeight.normal,
+                      color: _selectedTab == 1 ? Colors.white : Colors.white60,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 final videos = [
   {'id': 1, 'title': 'Slither.io', 'video': 'assets/videos/Game1.mov', 'gameUrl': 'https://slither.io/'},
   {'id': 2, 'title': 'Bloxd.io', 'video': 'assets/videos/Game2.mov', 'gameUrl': 'https://bloxd.io/'},
@@ -586,7 +692,8 @@ final videos = [
 ];
 
 class FeedScreen extends StatefulWidget {
-  const FeedScreen({super.key});
+  final VoidCallback? onLikeChanged;
+  const FeedScreen({super.key, this.onLikeChanged});
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
@@ -609,24 +716,105 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: GestureDetector(
-        onHorizontalDragEnd: (details) {
-          if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
-            onSwipeLeft();
-          }
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
+          onSwipeLeft();
+        }
+      },
+      child: PageView.builder(
+        scrollDirection: Axis.vertical,
+        itemCount: videos.length,
+        onPageChanged: (index) => setState(() => currentIndex = index),
+        itemBuilder: (context, index) {
+          return VideoCard(
+            video: videos[index],
+            isActive: index == currentIndex,
+            onLikeChanged: () {
+              setState(() {});
+              widget.onLikeChanged?.call();
+            },
+          );
         },
-        child: PageView.builder(
-          scrollDirection: Axis.vertical,
-          itemCount: videos.length,
-          onPageChanged: (index) => setState(() => currentIndex = index),
-          itemBuilder: (context, index) {
-            return VideoCard(
-              video: videos[index],
-              isActive: index == currentIndex,
-            );
-          },
+      ),
+    );
+  }
+}
+
+// ============================================
+// LIKED GAMES SCREEN
+// ============================================
+
+class LikedGamesScreen extends StatefulWidget {
+  final VoidCallback? onLikeChanged;
+  const LikedGamesScreen({super.key, this.onLikeChanged});
+
+  @override
+  State<LikedGamesScreen> createState() => _LikedGamesScreenState();
+}
+
+class _LikedGamesScreenState extends State<LikedGamesScreen> {
+  int currentIndex = 0;
+
+  void onSwipeLeft() {
+    final likedGames = LikedGamesService.getLikedGames();
+    if (likedGames.isEmpty) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => GameScreen(
+          title: likedGames[currentIndex]['title'] as String,
+          gameUrl: likedGames[currentIndex]['gameUrl'] as String,
         ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final likedGames = LikedGamesService.getLikedGames();
+
+    if (likedGames.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.favorite_border, size: 64, color: Colors.white38),
+            SizedBox(height: 16),
+            Text(
+              'No liked games yet',
+              style: TextStyle(fontSize: 18, color: Colors.white60),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Tap the heart on games you love!',
+              style: TextStyle(fontSize: 14, color: Colors.white38),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onHorizontalDragEnd: (details) {
+        if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
+          onSwipeLeft();
+        }
+      },
+      child: PageView.builder(
+        scrollDirection: Axis.vertical,
+        itemCount: likedGames.length,
+        onPageChanged: (index) => setState(() => currentIndex = index),
+        itemBuilder: (context, index) {
+          return VideoCard(
+            video: likedGames[index],
+            isActive: index == currentIndex,
+            onLikeChanged: () {
+              setState(() {});
+              widget.onLikeChanged?.call();
+            },
+          );
+        },
       ),
     );
   }
@@ -635,8 +823,14 @@ class _FeedScreenState extends State<FeedScreen> {
 class VideoCard extends StatefulWidget {
   final Map<String, dynamic> video;
   final bool isActive;
+  final VoidCallback? onLikeChanged;
 
-  const VideoCard({super.key, required this.video, required this.isActive});
+  const VideoCard({
+    super.key,
+    required this.video,
+    required this.isActive,
+    this.onLikeChanged,
+  });
 
   @override
   State<VideoCard> createState() => _VideoCardState();
@@ -673,8 +867,18 @@ class _VideoCardState extends State<VideoCard> {
     super.dispose();
   }
 
+  void _toggleLike() async {
+    final gameId = widget.video['id'] as int;
+    await LikedGamesService.toggleLike(gameId);
+    setState(() {});
+    widget.onLikeChanged?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
+    final gameId = widget.video['id'] as int;
+    final isLiked = LikedGamesService.isLiked(gameId);
+
     return Stack(
       fit: StackFit.expand,
       children: [
@@ -689,12 +893,35 @@ class _VideoCardState extends State<VideoCard> {
                 )
               : const Center(child: CircularProgressIndicator(color: Colors.white)),
         ),
+        // Game title
         Positioned(
           bottom: 100,
           left: 16,
           child: Text(
             widget.video['title'],
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+          ),
+        ),
+        // Like button
+        Positioned(
+          right: 16,
+          bottom: 100,
+          child: GestureDetector(
+            onTap: _toggleLike,
+            child: Column(
+              children: [
+                Icon(
+                  isLiked ? Icons.favorite : Icons.favorite_border,
+                  color: isLiked ? Colors.red : Colors.white,
+                  size: 40,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isLiked ? 'Liked' : 'Like',
+                  style: const TextStyle(fontSize: 12, color: Colors.white),
+                ),
+              ],
+            ),
           ),
         ),
       ],
