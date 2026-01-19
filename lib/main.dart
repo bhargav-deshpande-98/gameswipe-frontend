@@ -46,44 +46,66 @@ class OnboardingScreen extends StatefulWidget {
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final PageController _pageController = PageController();
   final TextEditingController _nicknameController = TextEditingController();
   String _nickname = '';
 
-  late AnimationController _slideController;
-  late Animation<Offset> _slideAnimation;
+  late AnimationController _slideUpController;
+  late Animation<Offset> _slideUpAnimation;
+  late AnimationController _slideLeftController;
+  late Animation<Offset> _slideLeftAnimation;
   bool _isExiting = false;
 
   @override
   void initState() {
     super.initState();
-    _slideController = AnimationController(
+    // Slide up animation for page 2
+    _slideUpController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _slideAnimation = Tween<Offset>(
+    _slideUpAnimation = Tween<Offset>(
       begin: Offset.zero,
       end: const Offset(0, -1), // Slide up off screen
     ).animate(CurvedAnimation(
-      parent: _slideController,
+      parent: _slideUpController,
+      curve: Curves.easeInOut,
+    ));
+
+    // Slide left animation for page 3
+    _slideLeftController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _slideLeftAnimation = Tween<Offset>(
+      begin: Offset.zero,
+      end: const Offset(-1, 0), // Slide left off screen
+    ).animate(CurvedAnimation(
+      parent: _slideLeftController,
       curve: Curves.easeInOut,
     ));
   }
 
   @override
   void dispose() {
-    _slideController.dispose();
+    _slideUpController.dispose();
+    _slideLeftController.dispose();
     _pageController.dispose();
     _nicknameController.dispose();
     super.dispose();
   }
 
-  void _goToNextPage() {
-    _pageController.nextPage(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-    );
+  bool _isAnimating = false;
+
+  Future<void> _goToNextPageWithAnimation() async {
+    if (_isAnimating) return;
+    _isAnimating = true;
+
+    await _slideUpController.forward();
+    _pageController.jumpToPage(_pageController.page!.toInt() + 1);
+    _slideUpController.reset();
+    _isAnimating = false;
   }
 
   Future<void> _completeOnboarding() async {
@@ -94,8 +116,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     await prefs.setBool('onboarding_complete', true);
     await prefs.setString('user_nickname', _nickname);
 
-    // Animate slide up, then navigate
-    await _slideController.forward();
+    // Animate slide left, then navigate
+    await _slideLeftController.forward();
 
     if (mounted) {
       Navigator.of(context).pushReplacement(
@@ -117,7 +139,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           physics: const NeverScrollableScrollPhysics(),
           children: [
             _buildNicknamePage(),
-            _buildSwipeTutorialPage(),
+            _buildSwipeUpTutorialPage(),
+            _buildSwipeLeftTutorialPage(),
           ],
         ),
       ),
@@ -167,7 +190,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             width: double.infinity,
             height: 56,
             child: ElevatedButton(
-              onPressed: _nickname.length >= 2 ? _goToNextPage : null,
+              onPressed: _nickname.length >= 2 ? () => _pageController.nextPage(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              ) : null,
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.black,
                 disabledBackgroundColor: Colors.grey[300],
@@ -184,14 +210,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     );
   }
 
-  Widget _buildSwipeTutorialPage() {
+  Widget _buildSwipeUpTutorialPage() {
     return SlideTransition(
-      position: _slideAnimation,
+      position: _slideUpAnimation,
       child: GestureDetector(
         onVerticalDragEnd: (details) {
           // Detect swipe up (negative velocity means upward)
           if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
-            _completeOnboarding();
+            _goToNextPageWithAnimation();
           }
         },
         child: Container(
@@ -201,7 +227,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             children: [
               const Spacer(flex: 2),
               const Text(
-                'Swipe up to start\nwatching',
+                'Swipe up for\nnext game',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 28,
@@ -214,6 +240,44 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               const Spacer(flex: 3),
               // Chevrons at bottom center
               const PulsingChevrons(),
+              const SizedBox(height: 48),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSwipeLeftTutorialPage() {
+    return SlideTransition(
+      position: _slideLeftAnimation,
+      child: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          // Detect swipe left (negative velocity means leftward)
+          if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
+            _completeOnboarding();
+          }
+        },
+        child: Container(
+          color: Colors.white,
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            children: [
+              const Spacer(flex: 2),
+              const Text(
+                'Swipe left to\nstart playing',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 48),
+              const SwipeLeftAnimation(),
+              const Spacer(flex: 3),
+              // Chevrons at left center
+              const PulsingLeftChevrons(),
               const SizedBox(height: 48),
             ],
           ),
@@ -360,6 +424,144 @@ class _PulsingChevronsState extends State<PulsingChevrons>
   }
 }
 
+// ============================================
+// SWIPE LEFT ANIMATION
+// ============================================
+
+class SwipeLeftAnimation extends StatefulWidget {
+  const SwipeLeftAnimation({super.key});
+
+  @override
+  State<SwipeLeftAnimation> createState() => _SwipeLeftAnimationState();
+}
+
+class _SwipeLeftAnimationState extends State<SwipeLeftAnimation>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _slideAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat();
+
+    // Hand moves LEFT: starts at right (0) and moves left (60)
+    _slideAnimation = Tween<double>(begin: 0, end: 60).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+
+    // Fade out as hand moves left
+    _opacityAnimation = Tween<double>(begin: 1, end: 0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.5, 1.0)),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 200,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Phone mockup
+          Container(
+            width: 100,
+            height: 160,
+            decoration: BoxDecoration(
+              color: Colors.grey[300],
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Center(
+              child: Icon(Icons.videogame_asset, size: 40, color: Colors.grey[500]),
+            ),
+          ),
+          // Animated hand
+          AnimatedBuilder(
+            animation: _controller,
+            builder: (context, child) {
+              return Positioned(
+                right: 30 + _slideAnimation.value,
+                bottom: 60,
+                child: Opacity(
+                  opacity: _opacityAnimation.value,
+                  child: const Icon(
+                    Icons.touch_app,
+                    size: 48,
+                    color: Colors.black87,
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================
+// PULSING LEFT CHEVRONS
+// ============================================
+
+class PulsingLeftChevrons extends StatefulWidget {
+  const PulsingLeftChevrons({super.key});
+
+  @override
+  State<PulsingLeftChevrons> createState() => _PulsingLeftChevronsState();
+}
+
+class _PulsingLeftChevronsState extends State<PulsingLeftChevrons>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: 0.3 + (_controller.value * 0.7),
+          child: Transform.translate(
+            offset: Offset(-_controller.value * 5, 0),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.keyboard_arrow_left, size: 32, color: Colors.grey),
+                Icon(Icons.keyboard_arrow_left, size: 32, color: Colors.grey),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 final videos = [
   {'id': 1, 'title': 'Slither.io', 'video': 'assets/videos/Game1.mov', 'gameUrl': 'https://slither.io/'},
   {'id': 2, 'title': 'Bloxd.io', 'video': 'assets/videos/Game2.mov', 'gameUrl': 'https://bloxd.io/'},
@@ -493,20 +695,6 @@ class _VideoCardState extends State<VideoCard> {
           child: Text(
             widget.video['title'],
             style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-          ),
-        ),
-        Positioned(
-          right: 16,
-          bottom: 100,
-          child: Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: Colors.black45, borderRadius: BorderRadius.circular(10)),
-            child: const Column(
-              children: [
-                Icon(Icons.swipe_left, color: Colors.white70),
-                Text('Swipe to\nplay', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.white70)),
-              ],
-            ),
           ),
         ),
       ],
