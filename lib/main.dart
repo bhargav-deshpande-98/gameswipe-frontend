@@ -1263,10 +1263,14 @@ class _VideoCardState extends State<VideoCard> {
         Container(
           color: Colors.black,
           child: isInitialized
-              ? Center(
-                  child: AspectRatio(
-                    aspectRatio: controller.value.aspectRatio,
-                    child: VideoPlayer(controller),
+              ? SizedBox.expand(
+                  child: FittedBox(
+                    fit: BoxFit.cover,
+                    child: SizedBox(
+                      width: controller.value.size.width,
+                      height: controller.value.size.height,
+                      child: VideoPlayer(controller),
+                    ),
                   ),
                 )
               : const Center(child: CircularProgressIndicator(color: Colors.white)),
