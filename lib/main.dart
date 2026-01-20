@@ -721,11 +721,23 @@ class _FeedScreenState extends State<FeedScreen> {
   void onSwipeLeft() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => GameScreen(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => GameScreen(
           title: shuffledVideos[currentIndex]['title'] as String,
           gameUrl: shuffledVideos[currentIndex]['gameUrl'] as String,
         ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Slide in from right (new screen)
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
       ),
     );
   }
@@ -777,11 +789,23 @@ class _LikedGamesScreenState extends State<LikedGamesScreen> {
     if (likedGames.isEmpty) return;
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => GameScreen(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => GameScreen(
           title: likedGames[currentIndex]['title'] as String,
           gameUrl: likedGames[currentIndex]['gameUrl'] as String,
         ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Slide in from right (new screen)
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
       ),
     );
   }
