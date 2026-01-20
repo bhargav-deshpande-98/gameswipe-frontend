@@ -177,7 +177,8 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             ),
             const SizedBox(height: 16),
             const Text(
-              'This will be shown on leaderboards',
+              'This is how your friends and followers will recognize you',
+              textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.grey),
             ),
             const SizedBox(height: 48),
