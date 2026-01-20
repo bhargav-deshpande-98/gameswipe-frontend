@@ -565,6 +565,76 @@ class _PulsingLeftChevronsState extends State<PulsingLeftChevrons>
 }
 
 // ============================================
+// LOADING DOTS ANIMATION
+// ============================================
+
+class LoadingDots extends StatefulWidget {
+  const LoadingDots({super.key});
+
+  @override
+  State<LoadingDots> createState() => _LoadingDotsState();
+}
+
+class _LoadingDotsState extends State<LoadingDots>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1200),
+      vsync: this,
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(3, (index) {
+            // Stagger the animation for each dot
+            final delay = index * 0.2;
+            final animValue = ((_controller.value + delay) % 1.0);
+            // Create a bounce effect
+            final scale = animValue < 0.5
+                ? 1.0 + (animValue * 0.6)
+                : 1.0 + ((1.0 - animValue) * 0.6);
+            final opacity = animValue < 0.5
+                ? 0.4 + (animValue * 1.2)
+                : 0.4 + ((1.0 - animValue) * 1.2);
+
+            return Container(
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              child: Transform.scale(
+                scale: scale,
+                child: Container(
+                  width: 10,
+                  height: 10,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: const Color(0xFF667EEA).withValues(alpha: opacity),
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
+  }
+}
+
+// ============================================
 // MAIN NAVIGATION SCREEN (Bottom Nav Bar)
 // ============================================
 
@@ -1321,17 +1391,31 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen>
+    with SingleTickerProviderStateMixin {
   late WebViewController controller;
   bool isLoading = true;
   final ScreenshotController screenshotController = ScreenshotController();
   bool showShareDialog = false;
   int? gameScore;
   int? highScore;
+  late AnimationController _loadingAnimationController;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
+
+    // Setup loading animation
+    _loadingAnimationController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _loadingAnimationController, curve: Curves.easeInOut),
+    );
+
     controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1')
@@ -1345,6 +1429,12 @@ class _GameScreenState extends State<GameScreen> {
         onPageFinished: (_) => setState(() => isLoading = false),
       ))
       ..loadRequest(Uri.parse(widget.gameUrl));
+  }
+
+  @override
+  void dispose() {
+    _loadingAnimationController.dispose();
+    super.dispose();
   }
 
   void _handleGameMessage(String message) {
@@ -1414,7 +1504,71 @@ class _GameScreenState extends State<GameScreen> {
         body: Stack(
           children: [
             WebViewWidget(controller: controller),
-            if (isLoading) const Center(child: CircularProgressIndicator(color: Colors.purple)),
+            if (isLoading)
+              Container(
+                color: Colors.black,
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Animated logo
+                      AnimatedBuilder(
+                        animation: _loadingAnimationController,
+                        builder: (context, child) {
+                          return Transform.scale(
+                            scale: _pulseAnimation.value,
+                            child: Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(24),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF667EEA).withValues(alpha: 0.3 + (_pulseAnimation.value - 0.8) * 1.5),
+                                    blurRadius: 30,
+                                    spreadRadius: 5,
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: SvgPicture.asset(
+                                  'assets/logo/playbite_app_icon.svg',
+                                  width: 120,
+                                  height: 120,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 32),
+                      // Game title
+                      Text(
+                        widget.title,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Loading text
+                      Text(
+                        'Loading game...',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.grey[400],
+                        ),
+                      ),
+                      const SizedBox(height: 32),
+                      // Loading dots animation
+                      const LoadingDots(),
+                    ],
+                  ),
+                ),
+              ),
 
             if (showShareDialog)
               Container(
