@@ -577,10 +577,16 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
+  // Theme colors based on current tab
+  bool get _isDarkTheme => _currentIndex == 0; // Home tab is dark, Me tab is light
+
   @override
   Widget build(BuildContext context) {
+    final bgColor = _isDarkTheme ? Colors.black : Colors.white;
+    final borderColor = _isDarkTheme ? Colors.white12 : Colors.grey[300]!;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: bgColor,
       extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
@@ -590,10 +596,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ],
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.black,
+        decoration: BoxDecoration(
+          color: bgColor,
           border: Border(
-            top: BorderSide(color: Colors.white12, width: 0.5),
+            top: BorderSide(color: borderColor, width: 0.5),
           ),
         ),
         child: SafeArea(
@@ -629,6 +635,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     required String label,
   }) {
     final isSelected = _currentIndex == index;
+    final activeColor = _isDarkTheme ? Colors.white : Colors.black;
+    final inactiveColor = _isDarkTheme ? Colors.white60 : Colors.grey;
+
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
       behavior: HitTestBehavior.opaque,
@@ -639,7 +648,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           children: [
             Icon(
               isSelected ? activeIcon : icon,
-              color: isSelected ? Colors.white : Colors.white60,
+              color: isSelected ? activeColor : inactiveColor,
               size: 28,
             ),
             const SizedBox(height: 4),
@@ -647,7 +656,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: isSelected ? Colors.white : Colors.white60,
+                color: isSelected ? activeColor : inactiveColor,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
@@ -662,41 +671,230 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 // PROFILE SCREEN (Me Tab)
 // ============================================
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  String _nickname = '';
+  int _gamesPlayed = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _nickname = prefs.getString('user_nickname') ?? 'Player';
+      _gamesPlayed = prefs.getInt('games_played') ?? 0;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+    final likedGamesCount = LikedGamesService.getLikedGames().length;
+
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        centerTitle: true,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.person_outline,
-              size: 80,
-              color: Colors.white38,
-            ),
-            SizedBox(height: 16),
             Text(
-              'Profile',
-              style: TextStyle(
-                fontSize: 24,
+              _nickname,
+              style: const TextStyle(
+                color: Colors.black,
+                fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: Colors.white,
               ),
             ),
-            SizedBox(height: 8),
-            Text(
-              'Coming soon...',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.white60,
-              ),
-            ),
+            const SizedBox(width: 4),
+            const Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 20),
           ],
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.more_horiz, color: Colors.black),
+            onPressed: () {},
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          const SizedBox(height: 20),
+          // Profile Picture
+          Center(
+            child: Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.grey[200],
+                border: Border.all(color: Colors.grey[300]!, width: 1),
+              ),
+              child: const Icon(
+                Icons.person,
+                size: 48,
+                color: Colors.grey,
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Username
+          Text(
+            '@${_nickname.toLowerCase().replaceAll(' ', '_')}',
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.black87,
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Stats Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildStatColumn('$_gamesPlayed', 'Played'),
+              Container(
+                height: 30,
+                width: 1,
+                color: Colors.grey[300],
+                margin: const EdgeInsets.symmetric(horizontal: 32),
+              ),
+              _buildStatColumn('$likedGamesCount', 'Liked'),
+            ],
+          ),
+          const SizedBox(height: 24),
+          // Edit Profile Button
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 40),
+            child: SizedBox(
+              width: double.infinity,
+              height: 46,
+              child: OutlinedButton(
+                onPressed: () {
+                  _showEditProfileDialog();
+                },
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: Colors.grey[300]!),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+                child: const Text(
+                  'Edit profile',
+                  style: TextStyle(
+                    color: Colors.black,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // Bio placeholder
+          Text(
+            'Tap to add bio',
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[500],
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Divider
+          Divider(color: Colors.grey[300], height: 1),
+          // Placeholder for games grid (future)
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.videogame_asset_outlined,
+                    size: 48,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Your games will appear here',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[500],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatColumn(String value, String label) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showEditProfileDialog() {
+    final controller = TextEditingController(text: _nickname);
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Edit Nickname'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Enter new nickname',
+          ),
+          textCapitalization: TextCapitalization.words,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () async {
+              if (controller.text.length >= 2) {
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.setString('user_nickname', controller.text);
+                setState(() {
+                  _nickname = controller.text;
+                });
+                if (context.mounted) Navigator.pop(context);
+              }
+            },
+            child: const Text('Save'),
+          ),
+        ],
       ),
     );
   }
