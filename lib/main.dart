@@ -133,81 +133,93 @@ class _OnboardingScreenState extends State<OnboardingScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: SafeArea(
-        child: PageView(
-          controller: _pageController,
-          physics: const NeverScrollableScrollPhysics(),
-          children: [
-            _buildNicknamePage(),
-            _buildSwipeUpTutorialPage(),
-            _buildSwipeLeftTutorialPage(),
-          ],
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        backgroundColor: Colors.white,
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          child: PageView(
+            controller: _pageController,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
+              _buildNicknamePage(),
+              _buildSwipeUpTutorialPage(),
+              _buildSwipeLeftTutorialPage(),
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildNicknamePage() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Text(
-            'Create Your\nNickname',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'This will be shown on leaderboards',
-            style: TextStyle(fontSize: 16, color: Colors.grey),
-          ),
-          const SizedBox(height: 48),
-          TextField(
-            controller: _nicknameController,
-            onChanged: (value) => setState(() => _nickname = value),
-            style: const TextStyle(color: Colors.black, fontSize: 18),
-            textCapitalization: TextCapitalization.words,
-            decoration: InputDecoration(
-              hintText: 'Enter nickname...',
-              hintStyle: TextStyle(color: Colors.grey[400]),
-              filled: true,
-              fillColor: Colors.grey[100],
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none,
-              ),
-              contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-            ),
-          ),
-          const SizedBox(height: 32),
-          SizedBox(
-            width: double.infinity,
-            height: 56,
-            child: ElevatedButton(
-              onPressed: _nickname.length >= 2 ? () => _pageController.nextPage(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeInOut,
-              ) : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                disabledBackgroundColor: Colors.grey[300],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text(
-                'Continue',
-                style: TextStyle(fontSize: 18, color: Colors.white),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.of(context).size.height -
+              MediaQuery.of(context).padding.top -
+              MediaQuery.of(context).padding.bottom -
+              64, // Account for SafeArea and padding
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Text(
+              'Create Your\nNickname',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 32,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            const Text(
+              'This will be shown on leaderboards',
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+            const SizedBox(height: 48),
+            TextField(
+              controller: _nicknameController,
+              onChanged: (value) => setState(() => _nickname = value),
+              style: const TextStyle(color: Colors.black, fontSize: 18),
+              textCapitalization: TextCapitalization.words,
+              decoration: InputDecoration(
+                hintText: 'Enter nickname...',
+                hintStyle: TextStyle(color: Colors.grey[400]),
+                filled: true,
+                fillColor: Colors.grey[100],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              ),
+            ),
+            const SizedBox(height: 32),
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _nickname.length >= 2 ? () => _pageController.nextPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                ) : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  disabledBackgroundColor: Colors.grey[300],
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text(
+                  'Continue',
+                  style: TextStyle(fontSize: 18, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -224,8 +236,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         },
         child: Container(
           color: Colors.white,
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(flex: 2),
               const Text(
@@ -239,10 +252,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               ),
               const SizedBox(height: 48),
               const SwipeUpAnimation(),
-              const Spacer(flex: 3),
+              const Spacer(flex: 2),
               // Chevrons at bottom center
               const PulsingChevrons(),
-              const SizedBox(height: 48),
+              const Spacer(flex: 1),
             ],
           ),
         ),
@@ -262,8 +275,9 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         },
         child: Container(
           color: Colors.white,
-          padding: const EdgeInsets.all(32),
+          padding: const EdgeInsets.symmetric(horizontal: 32),
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(flex: 2),
               const Text(
@@ -277,10 +291,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               ),
               const SizedBox(height: 48),
               const SwipeLeftAnimation(),
-              const Spacer(flex: 3),
+              const Spacer(flex: 2),
               // Chevrons at left center
               const PulsingLeftChevrons(),
-              const SizedBox(height: 48),
+              const Spacer(flex: 1),
             ],
           ),
         ),
