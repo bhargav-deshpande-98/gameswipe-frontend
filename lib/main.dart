@@ -577,10 +577,16 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
 
+  // Theme colors based on current tab
+  bool get _isDarkTheme => _currentIndex == 0; // Home tab is dark, Me tab is light
+
   @override
   Widget build(BuildContext context) {
+    final bgColor = _isDarkTheme ? Colors.black : Colors.white;
+    final borderColor = _isDarkTheme ? Colors.white12 : Colors.grey[300]!;
+
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: bgColor,
       extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
@@ -590,10 +596,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         ],
       ),
       bottomNavigationBar: Container(
-        decoration: const BoxDecoration(
-          color: Colors.black,
+        decoration: BoxDecoration(
+          color: bgColor,
           border: Border(
-            top: BorderSide(color: Colors.white12, width: 0.5),
+            top: BorderSide(color: borderColor, width: 0.5),
           ),
         ),
         child: SafeArea(
@@ -629,6 +635,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     required String label,
   }) {
     final isSelected = _currentIndex == index;
+    final activeColor = _isDarkTheme ? Colors.white : Colors.black;
+    final inactiveColor = _isDarkTheme ? Colors.white60 : Colors.grey;
+
     return GestureDetector(
       onTap: () => setState(() => _currentIndex = index),
       behavior: HitTestBehavior.opaque,
@@ -639,7 +648,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           children: [
             Icon(
               isSelected ? activeIcon : icon,
-              color: isSelected ? Colors.white : Colors.white60,
+              color: isSelected ? activeColor : inactiveColor,
               size: 28,
             ),
             const SizedBox(height: 4),
@@ -647,7 +656,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               label,
               style: TextStyle(
                 fontSize: 12,
-                color: isSelected ? Colors.white : Colors.white60,
+                color: isSelected ? activeColor : inactiveColor,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
               ),
             ),
