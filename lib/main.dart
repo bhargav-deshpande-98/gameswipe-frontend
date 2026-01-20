@@ -8,6 +8,7 @@ import 'package:screenshot/screenshot.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -738,13 +739,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               height: 96,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.grey[200],
                 border: Border.all(color: Colors.grey[300]!, width: 1),
               ),
-              child: const Icon(
-                Icons.person,
-                size: 48,
-                color: Colors.grey,
+              child: ClipOval(
+                child: SvgPicture.asset(
+                  'assets/logo/playbite_app_icon.svg',
+                  width: 96,
+                  height: 96,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
           ),
