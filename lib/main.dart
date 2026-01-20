@@ -1488,6 +1488,24 @@ class _GameScreenState extends State<GameScreen>
     }
   }
 
+  Future<void> _shareScreenshot() async {
+    try {
+      final image = await screenshotController.capture();
+      if (image == null) return;
+
+      final tempDir = await getTemporaryDirectory();
+      final file = File('${tempDir.path}/game_screenshot_${DateTime.now().millisecondsSinceEpoch}.png');
+      await file.writeAsBytes(image);
+
+      await Share.shareXFiles(
+        [XFile(file.path)],
+        text: 'Check out ${widget.title} on Playbite! 🎮',
+      );
+    } catch (e) {
+      print('Error sharing screenshot: $e');
+    }
+  }
+
   void _playAgain() {
     setState(() {
       showShareDialog = false;
@@ -1510,8 +1528,14 @@ class _GameScreenState extends State<GameScreen>
           title: Text(widget.title),
           actions: [
             IconButton(
+              icon: const Icon(Icons.ios_share),
+              onPressed: _shareScreenshot,
+              tooltip: 'Share',
+            ),
+            IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () => controller.reload(),
+              tooltip: 'Reload',
             ),
           ],
         ),
