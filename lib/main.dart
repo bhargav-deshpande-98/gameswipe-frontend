@@ -612,9 +612,17 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedTab = 0; // 0 = Feed, 1 = Liked Games
+  Key _feedKey = UniqueKey(); // Key to force FeedScreen recreation on tab switch
 
   void _onLikeChanged() {
     setState(() {});
+  }
+
+  void _selectFeedTab() {
+    setState(() {
+      _selectedTab = 0;
+      _feedKey = UniqueKey(); // Generate new key to reshuffle games
+    });
   }
 
   @override
@@ -624,7 +632,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           // Content
           _selectedTab == 0
-              ? FeedScreen(onLikeChanged: _onLikeChanged)
+              ? FeedScreen(key: _feedKey, onLikeChanged: _onLikeChanged)
               : LikedGamesScreen(onLikeChanged: _onLikeChanged),
           // Top tabs
           Positioned(
@@ -635,7 +643,7 @@ class _HomeScreenState extends State<HomeScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 GestureDetector(
-                  onTap: () => setState(() => _selectedTab = 0),
+                  onTap: _selectFeedTab,
                   child: Text(
                     'Feed',
                     style: TextStyle(
@@ -701,14 +709,22 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   int currentIndex = 0;
+  late List<Map<String, dynamic>> shuffledVideos;
+
+  @override
+  void initState() {
+    super.initState();
+    // Create a shuffled copy of videos for randomized feed order
+    shuffledVideos = List<Map<String, dynamic>>.from(videos)..shuffle();
+  }
 
   void onSwipeLeft() {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => GameScreen(
-          title: videos[currentIndex]['title'] as String,
-          gameUrl: videos[currentIndex]['gameUrl'] as String,
+          title: shuffledVideos[currentIndex]['title'] as String,
+          gameUrl: shuffledVideos[currentIndex]['gameUrl'] as String,
         ),
       ),
     );
@@ -724,11 +740,11 @@ class _FeedScreenState extends State<FeedScreen> {
       },
       child: PageView.builder(
         scrollDirection: Axis.vertical,
-        itemCount: videos.length,
+        itemCount: shuffledVideos.length,
         onPageChanged: (index) => setState(() => currentIndex = index),
         itemBuilder: (context, index) {
           return VideoCard(
-            video: videos[index],
+            video: shuffledVideos[index],
             isActive: index == currentIndex,
             onLikeChanged: () {
               setState(() {});
