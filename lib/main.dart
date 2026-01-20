@@ -30,7 +30,7 @@ class PlaybiteApp extends StatelessWidget {
       title: 'Playbite',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      home: showOnboarding ? const OnboardingScreen() : const HomeScreen(),
+      home: showOnboarding ? const OnboardingScreen() : const MainNavigationScreen(),
     );
   }
 }
@@ -123,7 +123,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => const HomeScreen(),
+          pageBuilder: (context, animation, secondaryAnimation) => const MainNavigationScreen(),
           transitionDuration: Duration.zero,
         ),
       );
@@ -564,6 +564,145 @@ class _PulsingLeftChevronsState extends State<PulsingLeftChevrons>
 }
 
 // ============================================
+// MAIN NAVIGATION SCREEN (Bottom Nav Bar)
+// ============================================
+
+class MainNavigationScreen extends StatefulWidget {
+  const MainNavigationScreen({super.key});
+
+  @override
+  State<MainNavigationScreen> createState() => _MainNavigationScreenState();
+}
+
+class _MainNavigationScreenState extends State<MainNavigationScreen> {
+  int _currentIndex = 0;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      extendBody: true,
+      body: IndexedStack(
+        index: _currentIndex,
+        children: const [
+          HomeScreen(),
+          ProfileScreen(),
+        ],
+      ),
+      bottomNavigationBar: Container(
+        decoration: const BoxDecoration(
+          color: Colors.black,
+          border: Border(
+            top: BorderSide(color: Colors.white12, width: 0.5),
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildNavItem(
+                  index: 0,
+                  icon: Icons.home_outlined,
+                  activeIcon: Icons.home,
+                  label: 'Home',
+                ),
+                _buildNavItem(
+                  index: 1,
+                  icon: Icons.person_outline,
+                  activeIcon: Icons.person,
+                  label: 'Me',
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+  }) {
+    final isSelected = _currentIndex == index;
+    return GestureDetector(
+      onTap: () => setState(() => _currentIndex = index),
+      behavior: HitTestBehavior.opaque,
+      child: SizedBox(
+        width: 80,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? activeIcon : icon,
+              color: isSelected ? Colors.white : Colors.white60,
+              size: 28,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                color: isSelected ? Colors.white : Colors.white60,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================
+// PROFILE SCREEN (Me Tab)
+// ============================================
+
+class ProfileScreen extends StatelessWidget {
+  const ProfileScreen({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.person_outline,
+              size: 80,
+              color: Colors.white38,
+            ),
+            SizedBox(height: 16),
+            Text(
+              'Profile',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Coming soon...',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.white60,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================
 // LIKED GAMES SERVICE
 // ============================================
 
@@ -627,51 +766,49 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          // Content
-          _selectedTab == 0
-              ? FeedScreen(key: _feedKey, onLikeChanged: _onLikeChanged)
-              : LikedGamesScreen(onLikeChanged: _onLikeChanged),
-          // Top tabs
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            left: 0,
-            right: 0,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: _selectFeedTab,
-                  child: Text(
-                    'Feed',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: _selectedTab == 0 ? FontWeight.bold : FontWeight.normal,
-                      color: _selectedTab == 0 ? Colors.white : Colors.white60,
-                    ),
+    return Stack(
+      children: [
+        // Content
+        _selectedTab == 0
+            ? FeedScreen(key: _feedKey, onLikeChanged: _onLikeChanged)
+            : LikedGamesScreen(onLikeChanged: _onLikeChanged),
+        // Top tabs
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 10,
+          left: 0,
+          right: 0,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              GestureDetector(
+                onTap: _selectFeedTab,
+                child: Text(
+                  'Feed',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: _selectedTab == 0 ? FontWeight.bold : FontWeight.normal,
+                    color: _selectedTab == 0 ? Colors.white : Colors.white60,
                   ),
                 ),
-                const SizedBox(width: 8),
-                const Text('|', style: TextStyle(color: Colors.white60)),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => setState(() => _selectedTab = 1),
-                  child: Text(
-                    'Liked Games',
-                    style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: _selectedTab == 1 ? FontWeight.bold : FontWeight.normal,
-                      color: _selectedTab == 1 ? Colors.white : Colors.white60,
-                    ),
+              ),
+              const SizedBox(width: 8),
+              const Text('|', style: TextStyle(color: Colors.white60)),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () => setState(() => _selectedTab = 1),
+                child: Text(
+                  'Liked Games',
+                  style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: _selectedTab == 1 ? FontWeight.bold : FontWeight.normal,
+                    color: _selectedTab == 1 ? Colors.white : Colors.white60,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -935,7 +1072,7 @@ class _VideoCardState extends State<VideoCard> {
         ),
         // Game title
         Positioned(
-          bottom: 100,
+          bottom: 140,
           left: 16,
           child: Text(
             widget.video['title'],
@@ -945,7 +1082,7 @@ class _VideoCardState extends State<VideoCard> {
         // Like button
         Positioned(
           right: 16,
-          bottom: 100,
+          bottom: 140,
           child: GestureDetector(
             onTap: _toggleLike,
             child: Column(
