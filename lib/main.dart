@@ -17,6 +17,7 @@ void main() async {
   final prefs = await SharedPreferences.getInstance();
   final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
   await LikedGamesService.init();
+  await RecentlyPlayedService.init();
 
   runApp(PlaybiteApp(showOnboarding: !onboardingComplete));
 }
@@ -900,31 +901,192 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const SizedBox(height: 24),
           // Divider
           Divider(color: Colors.grey[300], height: 1),
-          // Placeholder for games grid (future)
+          // Recently Played and Created Games sections
           Expanded(
-            child: Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.videogame_asset_outlined,
-                    size: 48,
-                    color: Colors.grey[400],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Your games will appear here',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[500],
-                    ),
-                  ),
+                  // Recently Played Section
+                  _buildRecentlyPlayedSection(),
+                  const SizedBox(height: 24),
+                  // Created Games Section
+                  _buildCreatedGamesSection(),
                 ],
               ),
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildRecentlyPlayedSection() {
+    final recentGames = RecentlyPlayedService.getRecentGames();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Recently Played',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (recentGames.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              children: [
+                Icon(
+                  Icons.videogame_asset_outlined,
+                  size: 40,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Play some games to see them here',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+          )
+        else
+          Row(
+            children: recentGames.map((game) {
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  child: _buildGameThumbnail(game),
+                ),
+              );
+            }).toList(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildGameThumbnail(Map<String, dynamic> game) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => GameScreen(
+              title: game['title'] as String,
+              gameUrl: game['gameUrl'] as String,
+            ),
+          ),
+        );
+      },
+      child: Column(
+        children: [
+          AspectRatio(
+            aspectRatio: 9 / 16,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: _GameThumbnailVideo(videoPath: game['video'] as String),
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            game['title'] as String,
+            style: const TextStyle(
+              fontSize: 12,
+              color: Colors.black87,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCreatedGamesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Created Games',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.black,
+          ),
+        ),
+        const SizedBox(height: 12),
+        GestureDetector(
+          onTap: () {
+            // Future functionality - for now just show a message
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 40),
+            decoration: BoxDecoration(
+              color: Colors.grey[100],
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Colors.grey[300]!,
+                style: BorderStyle.solid,
+              ),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.grey[300],
+                  ),
+                  child: Icon(
+                    Icons.add,
+                    size: 32,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Build your first Game',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'using PlaybiteAI',
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.grey[500],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -985,6 +1147,113 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
+  }
+}
+
+// ============================================
+// GAME THUMBNAIL VIDEO WIDGET
+// ============================================
+
+class _GameThumbnailVideo extends StatefulWidget {
+  final String videoPath;
+
+  const _GameThumbnailVideo({required this.videoPath});
+
+  @override
+  State<_GameThumbnailVideo> createState() => _GameThumbnailVideoState();
+}
+
+class _GameThumbnailVideoState extends State<_GameThumbnailVideo> {
+  late VideoPlayerController _controller;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = VideoPlayerController.asset(widget.videoPath)
+      ..initialize().then((_) {
+        if (mounted) {
+          setState(() => _isInitialized = true);
+          // Seek to first frame and pause
+          _controller.seekTo(Duration.zero);
+          _controller.pause();
+        }
+      });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_isInitialized) {
+      return Container(
+        color: Colors.grey[300],
+        child: Center(
+          child: Icon(
+            Icons.videogame_asset,
+            color: Colors.grey[500],
+            size: 24,
+          ),
+        ),
+      );
+    }
+
+    return FittedBox(
+      fit: BoxFit.cover,
+      child: SizedBox(
+        width: _controller.value.size.width,
+        height: _controller.value.size.height,
+        child: VideoPlayer(_controller),
+      ),
+    );
+  }
+}
+
+// ============================================
+// RECENTLY PLAYED SERVICE
+// ============================================
+
+class RecentlyPlayedService {
+  static const String _key = 'recently_played_games';
+  static List<int> _recentGameIds = [];
+  static const int _maxGames = 3;
+  static bool _initialized = false;
+
+  static Future<void> init() async {
+    if (_initialized) return;
+    final prefs = await SharedPreferences.getInstance();
+    final stored = prefs.getStringList(_key) ?? [];
+    _recentGameIds = stored.map((e) => int.parse(e)).toList();
+    _initialized = true;
+  }
+
+  static Future<void> addGame(int gameId) async {
+    // Remove if already exists (to move to front)
+    _recentGameIds.remove(gameId);
+    // Add to front
+    _recentGameIds.insert(0, gameId);
+    // Keep only last 3
+    if (_recentGameIds.length > _maxGames) {
+      _recentGameIds = _recentGameIds.sublist(0, _maxGames);
+    }
+    // Persist
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_key, _recentGameIds.map((e) => e.toString()).toList());
+  }
+
+  static List<Map<String, dynamic>> getRecentGames() {
+    final List<Map<String, dynamic>> result = [];
+    for (final id in _recentGameIds) {
+      final game = videos.where((v) => v['id'] == id).toList();
+      if (game.isNotEmpty) {
+        result.add(game.first);
+      }
+    }
+    return result;
   }
 }
 
@@ -1141,7 +1410,11 @@ class _FeedScreenState extends State<FeedScreen> {
     shuffledVideos = List<Map<String, dynamic>>.from(videos)..shuffle();
   }
 
-  void onSwipeLeft() {
+  void onSwipeLeft() async {
+    final gameId = shuffledVideos[currentIndex]['id'] as int;
+    await RecentlyPlayedService.addGame(gameId);
+
+    if (!mounted) return;
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -1207,9 +1480,14 @@ class LikedGamesScreen extends StatefulWidget {
 class _LikedGamesScreenState extends State<LikedGamesScreen> {
   int currentIndex = 0;
 
-  void onSwipeLeft() {
+  void onSwipeLeft() async {
     final likedGames = LikedGamesService.getLikedGames();
     if (likedGames.isEmpty) return;
+
+    final gameId = likedGames[currentIndex]['id'] as int;
+    await RecentlyPlayedService.addGame(gameId);
+
+    if (!mounted) return;
     Navigator.push(
       context,
       PageRouteBuilder(
