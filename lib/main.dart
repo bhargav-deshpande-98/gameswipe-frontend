@@ -663,9 +663,20 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _currentIndex = 0;
+  final GlobalKey<_ProfileScreenState> _profileKey = GlobalKey<_ProfileScreenState>();
 
   // Theme colors based on current tab
   bool get _isDarkTheme => _currentIndex == 0; // Home tab is dark, Me tab is light
+
+  void _onTabChanged(int index) {
+    setState(() {
+      _currentIndex = index;
+    });
+    // Refresh profile screen when navigating to it
+    if (index == 1) {
+      _profileKey.currentState?.refresh();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -677,9 +688,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       extendBody: true,
       body: IndexedStack(
         index: _currentIndex,
-        children: const [
-          HomeScreen(),
-          ProfileScreen(),
+        children: [
+          const HomeScreen(),
+          ProfileScreen(key: _profileKey),
         ],
       ),
       bottomNavigationBar: Container(
@@ -726,7 +737,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final inactiveColor = _isDarkTheme ? Colors.white60 : Colors.grey;
 
     return GestureDetector(
-      onTap: () => setState(() => _currentIndex = index),
+      onTap: () => _onTabChanged(index),
       behavior: HitTestBehavior.opaque,
       child: SizedBox(
         width: 80,
@@ -768,11 +779,18 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   String _nickname = '';
   int _gamesPlayed = 0;
+  int _selectedTab = 0; // 0 = Created, 1 = Recent
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+  }
+
+  // Called when navigating to this screen to refresh data
+  void refresh() {
+    _loadUserData();
+    setState(() {}); // Trigger rebuild for liked games count and recent games
   }
 
   Future<void> _loadUserData() async {
@@ -815,166 +833,244 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          const SizedBox(height: 20),
-          // Profile Picture
-          Center(
-            child: Container(
-              width: 96,
-              height: 96,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.grey[300]!, width: 1),
-              ),
-              child: ClipOval(
-                child: SvgPicture.asset(
-                  'assets/logo/playbite_app_icon.svg',
-                  width: 96,
-                  height: 96,
-                  fit: BoxFit.cover,
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            // Profile Picture
+            Center(
+              child: Container(
+                width: 96,
+                height: 96,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.grey[300]!, width: 1),
                 ),
-              ),
-            ),
-          ),
-          const SizedBox(height: 12),
-          // Username
-          Text(
-            '@${_nickname.toLowerCase().replaceAll(' ', '_')}',
-            style: const TextStyle(
-              fontSize: 16,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Stats Row
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _buildStatColumn('$_gamesPlayed', 'Played'),
-              Container(
-                height: 30,
-                width: 1,
-                color: Colors.grey[300],
-                margin: const EdgeInsets.symmetric(horizontal: 32),
-              ),
-              _buildStatColumn('$likedGamesCount', 'Liked'),
-            ],
-          ),
-          const SizedBox(height: 24),
-          // Edit Profile Button
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 40),
-            child: SizedBox(
-              width: double.infinity,
-              height: 46,
-              child: OutlinedButton(
-                onPressed: () {
-                  _showEditProfileDialog();
-                },
-                style: OutlinedButton.styleFrom(
-                  side: BorderSide(color: Colors.grey[300]!),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                child: const Text(
-                  'Edit profile',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                child: ClipOval(
+                  child: SvgPicture.asset(
+                    'assets/logo/playbite_app_icon.svg',
+                    width: 96,
+                    height: 96,
+                    fit: BoxFit.cover,
                   ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(height: 16),
-          // Bio placeholder
-          Text(
-            'Tap to add bio',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey[500],
-            ),
-          ),
-          const SizedBox(height: 24),
-          // Divider
-          Divider(color: Colors.grey[300], height: 1),
-          // Recently Played and Created Games sections
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Recently Played Section
-                  _buildRecentlyPlayedSection(),
-                  const SizedBox(height: 24),
-                  // Created Games Section
-                  _buildCreatedGamesSection(),
-                ],
+            const SizedBox(height: 12),
+            // Username
+            Text(
+              '@${_nickname.toLowerCase().replaceAll(' ', '_')}',
+              style: const TextStyle(
+                fontSize: 16,
+                color: Colors.black87,
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentlyPlayedSection() {
-    final recentGames = RecentlyPlayedService.getRecentGames();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recently Played',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        const SizedBox(height: 12),
-        if (recentGames.isEmpty)
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 32),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Column(
+            const SizedBox(height: 24),
+            // Stats Row
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.videogame_asset_outlined,
-                  size: 40,
-                  color: Colors.grey[400],
+                _buildStatColumn('$_gamesPlayed', 'Played'),
+                Container(
+                  height: 30,
+                  width: 1,
+                  color: Colors.grey[300],
+                  margin: const EdgeInsets.symmetric(horizontal: 32),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  'Play some games to see them here',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[500],
+                _buildStatColumn('$likedGamesCount', 'Liked'),
+              ],
+            ),
+            const SizedBox(height: 24),
+            // Edit Profile Button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 40),
+              child: SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: OutlinedButton(
+                  onPressed: () {
+                    _showEditProfileDialog();
+                  },
+                  style: OutlinedButton.styleFrom(
+                    side: BorderSide(color: Colors.grey[300]!),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                  child: const Text(
+                    'Edit profile',
+                    style: TextStyle(
+                      color: Colors.black,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Bio placeholder
+            Text(
+              'Tap to add bio',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Tab Bar
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedTab = 0),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: _selectedTab == 0 ? Colors.black : Colors.grey[300]!,
+                            width: _selectedTab == 0 ? 2 : 1,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.add_circle_outline,
+                            size: 20,
+                            color: _selectedTab == 0 ? Colors.black : Colors.grey[500],
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Created',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: _selectedTab == 0 ? FontWeight.w600 : FontWeight.normal,
+                              color: _selectedTab == 0 ? Colors.black : Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () => setState(() => _selectedTab = 1),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      decoration: BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                            color: _selectedTab == 1 ? Colors.black : Colors.grey[300]!,
+                            width: _selectedTab == 1 ? 2 : 1,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.play_circle_outline,
+                            size: 20,
+                            color: _selectedTab == 1 ? Colors.black : Colors.grey[500],
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Recent',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: _selectedTab == 1 ? FontWeight.w600 : FontWeight.normal,
+                              color: _selectedTab == 1 ? Colors.black : Colors.grey[500],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
-          )
-        else
-          Row(
-            children: recentGames.map((game) {
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: _buildGameThumbnail(game),
-                ),
-              );
-            }).toList(),
+            // Tab Content
+            _selectedTab == 0
+                ? _buildCreatedGamesContent()
+                : _buildRecentlyPlayedContent(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentlyPlayedContent() {
+    final recentGames = RecentlyPlayedService.getRecentGames();
+
+    if (recentGames.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.all(24),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+          decoration: BoxDecoration(
+            color: Colors.grey[100],
+            borderRadius: BorderRadius.circular(16),
           ),
-      ],
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.grey[300],
+                ),
+                child: Icon(
+                  Icons.play_circle_outline,
+                  size: 40,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'No games played yet',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey[700],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Swipe left on games to play them',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[500],
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: GridView.builder(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          childAspectRatio: 0.65,
+          crossAxisSpacing: 8,
+          mainAxisSpacing: 12,
+        ),
+        itemCount: recentGames.length,
+        itemBuilder: (context, index) {
+          return _buildGameThumbnail(recentGames[index]);
+        },
+      ),
     );
   }
 
@@ -993,9 +1089,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       },
       child: Column(
         children: [
-          AspectRatio(
-            aspectRatio: 9 / 16,
+          Expanded(
             child: Container(
+              width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
                 borderRadius: BorderRadius.circular(8),
@@ -1010,7 +1106,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Text(
             game['title'] as String,
             style: const TextStyle(
-              fontSize: 12,
+              fontSize: 11,
               color: Colors.black87,
             ),
             maxLines: 1,
@@ -1022,71 +1118,80 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildCreatedGamesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Created Games',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
+  Widget _buildCreatedGamesContent() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(16),
         ),
-        const SizedBox(height: 12),
-        GestureDetector(
-          onTap: () {
-            // Future functionality - for now just show a message
-          },
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 40),
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Colors.grey[300]!,
-                style: BorderStyle.solid,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.grey[300],
+              ),
+              child: Icon(
+                Icons.add,
+                size: 40,
+                color: Colors.grey[600],
               ),
             ),
-            child: Column(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.grey[300],
-                  ),
-                  child: Icon(
-                    Icons.add,
-                    size: 32,
-                    color: Colors.grey[600],
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Build your first Game',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'using PlaybiteAI',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[500],
-                  ),
-                ),
-              ],
+            const SizedBox(height: 16),
+            Text(
+              'Build your first game',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
+              ),
             ),
-          ),
+            const SizedBox(height: 8),
+            Text(
+              'No code. Just prompt, create, play.',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+            ),
+            const SizedBox(height: 24),
+            GestureDetector(
+              onTap: () {
+                // Future functionality
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF8B5CF6),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.add, size: 20, color: Colors.white),
+                    SizedBox(width: 8),
+                    Text(
+                      'Make a Game',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
@@ -1220,7 +1325,7 @@ class _GameThumbnailVideoState extends State<_GameThumbnailVideo> {
 class RecentlyPlayedService {
   static const String _key = 'recently_played_games';
   static List<int> _recentGameIds = [];
-  static const int _maxGames = 3;
+  static const int _maxGames = 10;
   static bool _initialized = false;
 
   static Future<void> init() async {
