@@ -1586,6 +1586,7 @@ class FeedScreen extends StatefulWidget {
 class _FeedScreenState extends State<FeedScreen> {
   int currentIndex = 0;
   late List<Map<String, dynamic>> shuffledVideos;
+  bool _isGameOpen = false;
 
   @override
   void initState() {
@@ -1599,6 +1600,10 @@ class _FeedScreenState extends State<FeedScreen> {
     await RecentlyPlayedService.addGame(gameId);
 
     if (!mounted) return;
+
+    // Pause video before navigating
+    setState(() => _isGameOpen = true);
+
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -1619,7 +1624,10 @@ class _FeedScreenState extends State<FeedScreen> {
         },
         transitionDuration: const Duration(milliseconds: 300),
       ),
-    );
+    ).then((_) {
+      // Resume video when returning from game
+      if (mounted) setState(() => _isGameOpen = false);
+    });
   }
 
   @override
@@ -1637,7 +1645,7 @@ class _FeedScreenState extends State<FeedScreen> {
         itemBuilder: (context, index) {
           return VideoCard(
             video: shuffledVideos[index],
-            isActive: index == currentIndex,
+            isActive: index == currentIndex && !_isGameOpen,
             onLikeChanged: () {
               setState(() {});
               widget.onLikeChanged?.call();
@@ -1663,6 +1671,7 @@ class LikedGamesScreen extends StatefulWidget {
 
 class _LikedGamesScreenState extends State<LikedGamesScreen> {
   int currentIndex = 0;
+  bool _isGameOpen = false;
 
   void onSwipeLeft() async {
     final likedGames = LikedGamesService.getLikedGames();
@@ -1672,6 +1681,10 @@ class _LikedGamesScreenState extends State<LikedGamesScreen> {
     await RecentlyPlayedService.addGame(gameId);
 
     if (!mounted) return;
+
+    // Pause video before navigating
+    setState(() => _isGameOpen = true);
+
     Navigator.push(
       context,
       PageRouteBuilder(
@@ -1692,7 +1705,10 @@ class _LikedGamesScreenState extends State<LikedGamesScreen> {
         },
         transitionDuration: const Duration(milliseconds: 300),
       ),
-    );
+    ).then((_) {
+      // Resume video when returning from game
+      if (mounted) setState(() => _isGameOpen = false);
+    });
   }
 
   @override
@@ -1733,7 +1749,7 @@ class _LikedGamesScreenState extends State<LikedGamesScreen> {
         itemBuilder: (context, index) {
           return VideoCard(
             video: likedGames[index],
-            isActive: index == currentIndex,
+            isActive: index == currentIndex && !_isGameOpen,
             onLikeChanged: () {
               setState(() {});
               widget.onLikeChanged?.call();
