@@ -1570,7 +1570,7 @@ final videos = [
   {'id': 13, 'title': 'Jelly Jump', 'video': 'assets/videos/jellyjump_2.mov', 'gameUrl': 'https://jelly-jump-reborn.vercel.app/', 'creator': '@borg'},
   {'id': 14, 'title': 'Swing Copters', 'video': 'assets/videos/swing_copters.mov', 'gameUrl': 'https://sky-hopper-clone.vercel.app/', 'creator': '@varin'},
   {'id': 15, 'title': 'Masked Escape', 'video': 'assets/videos/masked_escape_2.mov', 'gameUrl': 'https://masked-escape.vercel.app/', 'creator': '@borg'},
-  {'id': 16, 'title': 'Helix Jump', 'video': 'assets/videos/helix_bounce_blitz.mov', 'gameUrl': 'https://helix-bounce-blitz.vercel.app/', 'creator': '@varin'},
+  {'id': 16, 'title': 'Helix Jump', 'video': 'assets/videos/helix_bounce_blitz_2.mov', 'gameUrl': 'https://helix-bounce-blitz.vercel.app/', 'creator': '@varin'},
   {'id': 17, 'title': 'Icy Tower', 'video': 'assets/videos/icy_tower.mov', 'gameUrl': 'https://tower-jump-mania.vercel.app/', 'creator': '@borg'},
   {'id': 18, 'title': 'Falldown', 'video': 'assets/videos/falldown.mov', 'gameUrl': 'https://fall-down-fun.vercel.app/', 'creator': '@varin'},
   {'id': 19, 'title': 'Color Switch', 'video': 'assets/videos/color_switch_2.mov', 'gameUrl': 'https://color-tap-mania.vercel.app/', 'creator': '@borg'},
