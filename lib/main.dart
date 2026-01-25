@@ -1572,7 +1572,7 @@ final videos = [
   {'id': 17, 'title': 'Icy Tower', 'video': 'assets/videos/icy_tower_2.mov', 'gameUrl': 'https://tower-jump-mania.vercel.app/', 'creator': '@borg'},
   {'id': 18, 'title': 'Falldown', 'video': 'assets/videos/falldown_2.mov', 'gameUrl': 'https://fall-down-fun.vercel.app/', 'creator': '@varin'},
   {'id': 19, 'title': 'Color Switch', 'video': 'assets/videos/color_switch_2.mov', 'gameUrl': 'https://color-tap-mania.vercel.app/', 'creator': '@borg'},
-  {'id': 20, 'title': 'Stack Master', 'video': 'assets/videos/stack_master.mov', 'gameUrl': 'https://stack-master-seven.vercel.app/', 'creator': '@varin'},
+  {'id': 20, 'title': 'Stack Master', 'video': 'assets/videos/stack_master_2.mov', 'gameUrl': 'https://stack-master-seven.vercel.app/', 'creator': '@varin'},
 ];
 
 class FeedScreen extends StatefulWidget {
