@@ -1567,7 +1567,7 @@ final videos = [
   {'id': 10, 'title': 'GSwitch', 'video': 'assets/videos/Game10.mov', 'gameUrl': 'https://gravity-switch-game-kappa.vercel.app/', 'creator': '@varin'},
   {'id': 11, 'title': 'Snake', 'video': 'assets/videos/Game11.mov', 'gameUrl': 'https://slither-io-game.vercel.app/', 'creator': '@borg'},
   {'id': 12, 'title': 'Hero Stick', 'video': 'assets/videos/Game12.mov', 'gameUrl': 'https://stick-hero-game-ten.vercel.app/', 'creator': '@varin'},
-  {'id': 13, 'title': 'Jelly Jump', 'video': 'assets/videos/jellyjump.mov', 'gameUrl': 'https://jelly-jump-reborn.vercel.app/', 'creator': '@borg'},
+  {'id': 13, 'title': 'Jelly Jump', 'video': 'assets/videos/jellyjump_2.mov', 'gameUrl': 'https://jelly-jump-reborn.vercel.app/', 'creator': '@borg'},
   {'id': 14, 'title': 'Swing Copters', 'video': 'assets/videos/swing_copters.mov', 'gameUrl': 'https://sky-hopper-clone.vercel.app/', 'creator': '@varin'},
   {'id': 15, 'title': 'Masked Escape', 'video': 'assets/videos/masked_escape.mov', 'gameUrl': 'https://masked-escape.vercel.app/', 'creator': '@borg'},
   {'id': 16, 'title': 'Helix Jump', 'video': 'assets/videos/helix_bounce_blitz.mov', 'gameUrl': 'https://helix-bounce-blitz.vercel.app/', 'creator': '@varin'},
