@@ -205,10 +205,14 @@ class _OnboardingScreenState extends State<OnboardingScreen>
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
-                onPressed: _nickname.length >= 2 ? () => _pageController.nextPage(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                ) : null,
+                onPressed: _nickname.length >= 2 ? () {
+                  // Dismiss keyboard before navigating
+                  FocusScope.of(context).unfocus();
+                  _pageController.nextPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                } : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.black,
                   disabledBackgroundColor: Colors.grey[300],
@@ -239,25 +243,51 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         child: Container(
           color: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
             children: [
-              const Spacer(flex: 2),
-              const Text(
-                'Swipe up for\nnext game',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+              // Back button
+              Positioned(
+                top: 16,
+                left: 0,
+                child: GestureDetector(
+                  onTap: () {
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.black54,
+                      size: 24,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 48),
-              const SwipeUpAnimation(),
-              const Spacer(flex: 2),
-              // Chevrons at bottom center
-              const PulsingChevrons(),
-              const Spacer(flex: 1),
+              // Main content
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Spacer(flex: 2),
+                  const Text(
+                    'Swipe up for\nnext game',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+                  const SwipeUpAnimation(),
+                  const Spacer(flex: 2),
+                  // Chevrons at bottom center
+                  const PulsingChevrons(),
+                  const Spacer(flex: 1),
+                ],
+              ),
             ],
           ),
         ),
@@ -278,25 +308,51 @@ class _OnboardingScreenState extends State<OnboardingScreen>
         child: Container(
           color: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+          child: Stack(
             children: [
-              const Spacer(flex: 2),
-              const Text(
-                'Swipe left to\nstart playing',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
+              // Back button
+              Positioned(
+                top: 16,
+                left: 0,
+                child: GestureDetector(
+                  onTap: () {
+                    _pageController.previousPage(
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.arrow_back_ios,
+                      color: Colors.black54,
+                      size: 24,
+                    ),
+                  ),
                 ),
               ),
-              const SizedBox(height: 48),
-              const SwipeLeftAnimation(),
-              const Spacer(flex: 2),
-              // Chevrons at left center
-              const PulsingLeftChevrons(),
-              const Spacer(flex: 1),
+              // Main content
+              const Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Spacer(flex: 2),
+                  Text(
+                    'Swipe left to\nstart playing',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  SizedBox(height: 48),
+                  SwipeLeftAnimation(),
+                  Spacer(flex: 2),
+                  // Chevrons at left center
+                  PulsingLeftChevrons(),
+                  Spacer(flex: 1),
+                ],
+              ),
             ],
           ),
         ),
