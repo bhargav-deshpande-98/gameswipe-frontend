@@ -1555,7 +1555,6 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 final videos = [
-  {'id': 1, 'title': 'Slither.io', 'video': 'assets/videos/Game1.mov', 'gameUrl': 'https://slither.io/', 'creator': '@borg'},
   {'id': 2, 'title': 'Bloxd.io', 'video': 'assets/videos/Game2.mov', 'gameUrl': 'https://bloxd.io/', 'creator': '@varin'},
   {'id': 3, 'title': 'Circlify', 'video': 'assets/videos/Game3.mov', 'gameUrl': 'https://circlify-game.vercel.app/', 'creator': '@borg'},
   {'id': 4, 'title': 'aa-speed', 'video': 'assets/videos/Game4.mov', 'gameUrl': 'https://aa-game.vercel.app/', 'creator': '@varin'},
