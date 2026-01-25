@@ -797,7 +797,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _nickname = prefs.getString('user_nickname') ?? 'Player';
-      _gamesPlayed = prefs.getInt('games_played') ?? 0;
+      _gamesPlayed = RecentlyPlayedService.getUniqueGamesPlayedCount();
     });
   }
 
@@ -1324,7 +1324,9 @@ class _GameThumbnailVideoState extends State<_GameThumbnailVideo> {
 
 class RecentlyPlayedService {
   static const String _key = 'recently_played_games';
+  static const String _uniquePlayedKey = 'unique_played_game_ids';
   static List<int> _recentGameIds = [];
+  static Set<int> _uniquePlayedGameIds = {};
   static const int _maxGames = 10;
   static bool _initialized = false;
 
@@ -1333,21 +1335,40 @@ class RecentlyPlayedService {
     final prefs = await SharedPreferences.getInstance();
     final stored = prefs.getStringList(_key) ?? [];
     _recentGameIds = stored.map((e) => int.parse(e)).toList();
+    // Load unique played games
+    final uniquePlayed = prefs.getStringList(_uniquePlayedKey) ?? [];
+    _uniquePlayedGameIds = uniquePlayed.map((e) => int.parse(e)).toSet();
     _initialized = true;
   }
 
   static Future<void> addGame(int gameId) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    // Track unique games played
+    if (!_uniquePlayedGameIds.contains(gameId)) {
+      _uniquePlayedGameIds.add(gameId);
+      await prefs.setStringList(
+        _uniquePlayedKey,
+        _uniquePlayedGameIds.map((e) => e.toString()).toList(),
+      );
+      // Update the games_played counter
+      await prefs.setInt('games_played', _uniquePlayedGameIds.length);
+    }
+
     // Remove if already exists (to move to front)
     _recentGameIds.remove(gameId);
     // Add to front
     _recentGameIds.insert(0, gameId);
-    // Keep only last 3
+    // Keep only last 10
     if (_recentGameIds.length > _maxGames) {
       _recentGameIds = _recentGameIds.sublist(0, _maxGames);
     }
-    // Persist
-    final prefs = await SharedPreferences.getInstance();
+    // Persist recent games
     await prefs.setStringList(_key, _recentGameIds.map((e) => e.toString()).toList());
+  }
+
+  static int getUniqueGamesPlayedCount() {
+    return _uniquePlayedGameIds.length;
   }
 
   static List<Map<String, dynamic>> getRecentGames() {
