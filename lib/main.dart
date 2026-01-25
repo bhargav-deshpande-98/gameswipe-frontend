@@ -1573,7 +1573,7 @@ final videos = [
   {'id': 16, 'title': 'Helix Jump', 'video': 'assets/videos/helix_bounce_blitz.mov', 'gameUrl': 'https://helix-bounce-blitz.vercel.app/', 'creator': '@varin'},
   {'id': 17, 'title': 'Icy Tower', 'video': 'assets/videos/icy_tower.mov', 'gameUrl': 'https://tower-jump-mania.vercel.app/', 'creator': '@borg'},
   {'id': 18, 'title': 'Falldown', 'video': 'assets/videos/falldown.mov', 'gameUrl': 'https://fall-down-fun.vercel.app/', 'creator': '@varin'},
-  {'id': 19, 'title': 'Color Switch', 'video': 'assets/videos/color_switch.mov', 'gameUrl': 'https://color-tap-mania.vercel.app/', 'creator': '@borg'},
+  {'id': 19, 'title': 'Color Switch', 'video': 'assets/videos/color_switch_2.mov', 'gameUrl': 'https://color-tap-mania.vercel.app/', 'creator': '@borg'},
   {'id': 20, 'title': 'Stack Master', 'video': 'assets/videos/stack_master.mov', 'gameUrl': 'https://stack-master-seven.vercel.app/', 'creator': '@varin'},
 ];
 
