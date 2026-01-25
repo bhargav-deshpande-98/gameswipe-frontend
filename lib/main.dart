@@ -1562,7 +1562,7 @@ final videos = [
   {'id': 5, 'title': 'Agar', 'video': 'assets/videos/agar-io.mov', 'gameUrl': 'https://agar-io-game-pc3l.vercel.app/', 'creator': '@borg'},
   {'id': 6, 'title': 'Crossy Road', 'video': 'assets/videos/Game6.mov', 'gameUrl': 'https://crossy-road-game-lo43.vercel.app/', 'creator': '@varin'},
   {'id': 7, 'title': 'Jumping Cube', 'video': 'assets/videos/Game7.mov', 'gameUrl': 'https://cube-jump-game.vercel.app/', 'creator': '@borg'},
-  {'id': 8, 'title': 'Beware of Spikes', 'video': 'assets/videos/Game8.mov', 'gameUrl': 'https://dont-touch-spikes-game.vercel.app/', 'creator': '@varin'},
+  {'id': 8, 'title': 'Beware of Spikes', 'video': 'assets/videos/beware_of_spikes.mov', 'gameUrl': 'https://dont-touch-spikes-game.vercel.app/', 'creator': '@varin'},
   {'id': 9, 'title': 'Duet', 'video': 'assets/videos/Game9.mov', 'gameUrl': 'https://duet-game.vercel.app/', 'creator': '@borg'},
   {'id': 10, 'title': 'GSwitch', 'video': 'assets/videos/Game10.mov', 'gameUrl': 'https://gravity-switch-game-kappa.vercel.app/', 'creator': '@varin'},
   {'id': 11, 'title': 'Snake', 'video': 'assets/videos/Game11.mov', 'gameUrl': 'https://slither-io-game.vercel.app/', 'creator': '@borg'},
