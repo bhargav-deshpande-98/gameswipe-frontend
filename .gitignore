@@ -10,3 +10,6 @@ ios/Pods/
 android/.gradle/
 *.iml
 .DS_Store
+
+# Environment variables (contains secrets)
+.env

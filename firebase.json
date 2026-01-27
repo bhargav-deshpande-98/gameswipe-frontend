@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"ios":{"default":{"projectId":"playbite-app","appId":"1:439361643459:ios:0eb141068cd7d34be6d376","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"playbite-app","configurations":{"ios":"1:439361643459:ios:0eb141068cd7d34be6d376"}}}}}}

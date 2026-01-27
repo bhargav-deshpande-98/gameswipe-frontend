@@ -9,6 +9,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -1179,6 +1181,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildCreatedGamesContent() {
+    // Always show empty state - games will be added manually for MVP
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Container(
@@ -1223,9 +1226,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 24),
             GestureDetector(
-              onTap: () {
-                // Future functionality
-              },
+              onTap: () => _showMakeGameOptions(context),
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                 decoration: BoxDecoration(
@@ -1308,6 +1309,149 @@ class _ProfileScreenState extends State<ProfileScreen> {
               }
             },
             child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showMakeGameOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Handle bar
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Make a Game',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 24),
+            // Option 1: Create with Playbite Creator
+            _buildOptionTile(
+              icon: Icons.auto_awesome,
+              title: 'Create with Playbite Creator',
+              subtitle: 'Use AI to build your game',
+              onTap: () {
+                Navigator.pop(context);
+                _showComingSoonDialog(context);
+              },
+            ),
+            const SizedBox(height: 12),
+            // Option 2: Submit a game
+            _buildOptionTile(
+              icon: Icons.link,
+              title: 'Submit a Game',
+              subtitle: 'Add your Vercel-hosted game',
+              onTap: () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SubmitGameScreen(creatorName: '@$_nickname'),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOptionTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.grey[300]!),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: const Color(0xFF8B5CF6), size: 24),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(Icons.chevron_right, color: Colors.grey[400]),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showComingSoonDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Coming Soon!'),
+        content: const Text(
+          'Playbite Creator is currently in development. Soon you\'ll be able to create games using AI right from here!',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
           ),
         ],
       ),
@@ -1585,19 +1729,29 @@ class FeedScreen extends StatefulWidget {
 
 class _FeedScreenState extends State<FeedScreen> {
   int currentIndex = 0;
-  late List<Map<String, dynamic>> shuffledVideos;
+  List<Map<String, dynamic>> shuffledVideos = [];
   bool _isGameOpen = false;
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    // Create a shuffled copy of videos for randomized feed order
-    shuffledVideos = List<Map<String, dynamic>>.from(videos)..shuffle();
+    _loadGames();
+  }
+
+  void _loadGames() {
+    setState(() {
+      shuffledVideos = List<Map<String, dynamic>>.from(videos)..shuffle();
+      _isLoading = false;
+    });
   }
 
   void onSwipeLeft() async {
-    final gameId = shuffledVideos[currentIndex]['id'] as int;
-    await RecentlyPlayedService.addGame(gameId);
+    final rawId = shuffledVideos[currentIndex]['id'];
+    final gameId = rawId is int ? rawId : int.tryParse(rawId.toString());
+    if (gameId != null) {
+      await RecentlyPlayedService.addGame(gameId);
+    }
 
     if (!mounted) return;
 
@@ -1632,26 +1786,50 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
-          onSwipeLeft();
-        }
-      },
-      child: PageView.builder(
-        scrollDirection: Axis.vertical,
-        itemCount: shuffledVideos.length,
-        onPageChanged: (index) => setState(() => currentIndex = index),
-        itemBuilder: (context, index) {
-          return VideoCard(
-            video: shuffledVideos[index],
-            isActive: index == currentIndex && !_isGameOpen,
-            onLikeChanged: () {
-              setState(() {});
-              widget.onLikeChanged?.call();
-            },
-          );
+    if (_isLoading) {
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: CircularProgressIndicator(color: Color(0xFF8B5CF6)),
+        ),
+      );
+    }
+
+    if (shuffledVideos.isEmpty) {
+      return Container(
+        color: Colors.black,
+        child: const Center(
+          child: Text(
+            'No games available',
+            style: TextStyle(color: Colors.white, fontSize: 18),
+          ),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: () async => _loadGames(),
+      child: GestureDetector(
+        onHorizontalDragEnd: (details) {
+          if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
+            onSwipeLeft();
+          }
         },
+        child: PageView.builder(
+          scrollDirection: Axis.vertical,
+          itemCount: shuffledVideos.length,
+          onPageChanged: (index) => setState(() => currentIndex = index),
+          itemBuilder: (context, index) {
+            return VideoCard(
+              video: shuffledVideos[index],
+              isActive: index == currentIndex && !_isGameOpen,
+              onLikeChanged: () {
+                setState(() {});
+                widget.onLikeChanged?.call();
+              },
+            );
+          },
+        ),
       ),
     );
   }
@@ -1784,12 +1962,38 @@ class _VideoCardState extends State<VideoCard> {
   @override
   void initState() {
     super.initState();
-    controller = VideoPlayerController.asset(widget.video['video'])
-      ..initialize().then((_) {
-        setState(() => isInitialized = true);
-        controller.setLooping(true);
-        if (widget.isActive) controller.play();
-      });
+    _initializeController();
+  }
+
+  void _initializeController() {
+    final videoPath = widget.video['video'] as String;
+    final isNetworkVideo = widget.video['isFirebaseGame'] == true;
+
+    // Use network URL for Firebase games, asset path for hardcoded games
+    if (isNetworkVideo) {
+      controller = VideoPlayerController.networkUrl(Uri.parse(videoPath))
+        ..initialize().then((_) {
+          if (mounted) {
+            setState(() => isInitialized = true);
+            controller.setLooping(true);
+            if (widget.isActive) controller.play();
+          }
+        }).catchError((e) {
+          // Handle network video load error
+          if (mounted) {
+            setState(() => isInitialized = true); // Show black screen instead of spinner
+          }
+        });
+    } else {
+      controller = VideoPlayerController.asset(videoPath)
+        ..initialize().then((_) {
+          if (mounted) {
+            setState(() => isInitialized = true);
+            controller.setLooping(true);
+            if (widget.isActive) controller.play();
+          }
+        });
+    }
   }
 
   @override
@@ -1809,16 +2013,21 @@ class _VideoCardState extends State<VideoCard> {
   }
 
   void _toggleLike() async {
-    final gameId = widget.video['id'] as int;
-    await LikedGamesService.toggleLike(gameId);
-    setState(() {});
-    widget.onLikeChanged?.call();
+    final rawId = widget.video['id'];
+    // Handle both int (hardcoded) and String (Firebase) IDs
+    final gameId = rawId is int ? rawId : int.tryParse(rawId.toString());
+    if (gameId != null) {
+      await LikedGamesService.toggleLike(gameId);
+      setState(() {});
+      widget.onLikeChanged?.call();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final gameId = widget.video['id'] as int;
-    final isLiked = LikedGamesService.isLiked(gameId);
+    final rawId = widget.video['id'];
+    final gameId = rawId is int ? rawId : int.tryParse(rawId.toString());
+    final isLiked = gameId != null ? LikedGamesService.isLiked(gameId) : false;
     final topPadding = MediaQuery.of(context).padding.top;
     final bottomPadding = MediaQuery.of(context).padding.bottom;
 
@@ -2176,3 +2385,405 @@ class _GameScreenState extends State<GameScreen>
     );
   }
 }
+
+// ============================================
+// SUBMIT GAME SCREEN (Email-based submission)
+// ============================================
+
+class SubmitGameScreen extends StatefulWidget {
+  final String creatorName;
+
+  const SubmitGameScreen({super.key, required this.creatorName});
+
+  @override
+  State<SubmitGameScreen> createState() => _SubmitGameScreenState();
+}
+
+class _SubmitGameScreenState extends State<SubmitGameScreen> {
+  final _formKey = GlobalKey<FormState>();
+  final _urlController = TextEditingController();
+  final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
+  final _videoUrlController = TextEditingController();
+
+  bool _isVerifying = false;
+  bool _isUrlVerified = false;
+  String? _verificationError;
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _videoUrlController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _verifyUrl() async {
+    final url = _urlController.text.trim();
+    if (url.isEmpty) return;
+
+    setState(() {
+      _isVerifying = true;
+      _isUrlVerified = false;
+      _verificationError = null;
+    });
+
+    try {
+      // Simple HTTP check to verify the URL is accessible
+      final response = await http.head(Uri.parse(url));
+
+      setState(() {
+        _isVerifying = false;
+        if (response.statusCode >= 200 && response.statusCode < 400) {
+          _isUrlVerified = true;
+          _verificationError = null;
+
+          // Auto-fill title from URL if empty
+          if (_titleController.text.isEmpty) {
+            final uri = Uri.parse(url);
+            final name = uri.host.split('.').first;
+            _titleController.text = _formatName(name);
+          }
+        } else {
+          _isUrlVerified = false;
+          _verificationError = 'URL returned status ${response.statusCode}';
+        }
+      });
+    } catch (e) {
+      setState(() {
+        _isVerifying = false;
+        _isUrlVerified = false;
+        _verificationError = 'Could not reach URL. Please check the link.';
+      });
+    }
+  }
+
+  String _formatName(String name) {
+    return name
+        .split('-')
+        .map((word) => word.isNotEmpty ? '${word[0].toUpperCase()}${word.substring(1)}' : '')
+        .join(' ');
+  }
+
+  Future<void> _submitGame() async {
+    if (!_formKey.currentState!.validate()) return;
+    if (!_isUrlVerified) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please verify your game URL first')),
+      );
+      return;
+    }
+
+    // Create submission details
+    final submissionText = '''
+New Game Submission for Playbite
+
+Game Title: ${_titleController.text.trim()}
+Game URL: ${_urlController.text.trim()}
+Description: ${_descriptionController.text.trim().isEmpty ? 'N/A' : _descriptionController.text.trim()}
+Video URL: ${_videoUrlController.text.trim().isEmpty ? 'N/A' : _videoUrlController.text.trim()}
+Creator: ${widget.creatorName}
+
+---
+Add this to the videos list in main.dart:
+{'id': XX, 'title': '${_titleController.text.trim()}', 'video': 'assets/videos/FILENAME.mov', 'gameUrl': '${_urlController.text.trim()}', 'creator': '${widget.creatorName}'},
+''';
+
+    // Try to open email first, fall back to clipboard
+    final subject = Uri.encodeComponent('New Game Submission: ${_titleController.text.trim()}');
+    final body = Uri.encodeComponent(submissionText);
+    final emailUrl = Uri.parse('mailto:bhargav@playbite.io?subject=$subject&body=$body');
+
+    try {
+      if (await canLaunchUrl(emailUrl)) {
+        await launchUrl(emailUrl);
+        if (mounted) {
+          _showSuccessDialog('Your game details have been sent for review. We\'ll add it to Playbite soon!');
+        }
+      } else {
+        // Email not available - copy to clipboard instead
+        await Clipboard.setData(ClipboardData(text: submissionText));
+        if (mounted) {
+          _showSuccessDialog(
+            'Game details copied to clipboard!\n\nPlease email this to bhargav@playbite.io to complete your submission.',
+          );
+        }
+      }
+    } catch (e) {
+      // Fallback to clipboard
+      await Clipboard.setData(ClipboardData(text: submissionText));
+      if (mounted) {
+        _showSuccessDialog(
+          'Game details copied to clipboard!\n\nPlease email this to bhargav@playbite.io to complete your submission.',
+        );
+      }
+    }
+  }
+
+  void _showSuccessDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Submission Ready!'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            },
+            child: const Text('Got it!'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.close, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: const Text(
+          'Submit a Game',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Game URL input
+              const Text(
+                'Game URL',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _urlController,
+                      decoration: InputDecoration(
+                        hintText: 'https://your-game.vercel.app',
+                        filled: true,
+                        fillColor: Colors.grey[100],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                        suffixIcon: _isUrlVerified
+                            ? const Icon(Icons.check_circle, color: Colors.green)
+                            : null,
+                      ),
+                      style: const TextStyle(color: Colors.black),
+                      keyboardType: TextInputType.url,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a URL';
+                        }
+                        if (!value.startsWith('http')) {
+                          return 'Please enter a valid URL';
+                        }
+                        return null;
+                      },
+                      onChanged: (_) {
+                        if (_isUrlVerified) {
+                          setState(() {
+                            _isUrlVerified = false;
+                            _verificationError = null;
+                          });
+                        }
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  ElevatedButton(
+                    onPressed: _isVerifying ? null : _verifyUrl,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF8B5CF6),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: _isVerifying
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          )
+                        : const Text('Verify'),
+                  ),
+                ],
+              ),
+              if (_verificationError != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text(
+                    _verificationError!,
+                    style: const TextStyle(color: Colors.red, fontSize: 12),
+                  ),
+                ),
+              if (_isUrlVerified)
+                const Padding(
+                  padding: EdgeInsets.only(top: 8),
+                  child: Text(
+                    'URL verified!',
+                    style: TextStyle(color: Colors.green, fontSize: 12),
+                  ),
+                ),
+
+              const SizedBox(height: 24),
+
+              // Game Title input
+              const Text(
+                'Game Title',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _titleController,
+                decoration: InputDecoration(
+                  hintText: 'Enter game title',
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                style: const TextStyle(color: Colors.black),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a title';
+                  }
+                  return null;
+                },
+              ),
+
+              const SizedBox(height: 24),
+
+              // Description input (optional)
+              const Text(
+                'Description (Optional)',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _descriptionController,
+                decoration: InputDecoration(
+                  hintText: 'Tell players about your game',
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                style: const TextStyle(color: Colors.black),
+                maxLines: 3,
+              ),
+
+              const SizedBox(height: 24),
+
+              // Video URL input
+              const Text(
+                'Gameplay Video URL (Optional)',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextFormField(
+                controller: _videoUrlController,
+                decoration: InputDecoration(
+                  hintText: 'YouTube or Google Drive link',
+                  filled: true,
+                  fillColor: Colors.grey[100],
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+                style: const TextStyle(color: Colors.black),
+                keyboardType: TextInputType.url,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Upload a 15-20 second gameplay video to YouTube or Google Drive and paste the link here.',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey[500],
+                ),
+              ),
+
+              const SizedBox(height: 32),
+
+              // Submit button
+              ElevatedButton(
+                onPressed: _isUrlVerified ? _submitGame : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF8B5CF6),
+                  disabledBackgroundColor: Colors.grey[300],
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Submit Game',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Info text
+              Text(
+                'Your game submission will be sent for review. We\'ll add approved games to Playbite!',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[600],
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
