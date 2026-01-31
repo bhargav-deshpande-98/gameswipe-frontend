@@ -1967,8 +1967,20 @@ class _GameScreenState extends State<GameScreen>
       )
       ..setNavigationDelegate(NavigationDelegate(
         onPageFinished: (_) => setState(() => isLoading = false),
-      ))
-      ..loadRequest(Uri.parse(widget.gameUrl));
+      ));
+
+    _loadGameWithNickname();
+  }
+
+  Future<void> _loadGameWithNickname() async {
+    final prefs = await SharedPreferences.getInstance();
+    final nickname = prefs.getString('user_nickname') ?? 'Player';
+    final uri = Uri.parse(widget.gameUrl);
+    final gameUri = uri.replace(queryParameters: {
+      ...uri.queryParameters,
+      'nickname': nickname,
+    });
+    controller.loadRequest(gameUri);
   }
 
   @override
