@@ -1206,20 +1206,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white12,
-              ),
-              child: const Icon(
-                Icons.add,
-                size: 40,
-                color: Colors.white38,
-              ),
+            const Icon(
+              Icons.rocket_launch_rounded,
+              size: 48,
+              color: Color(0xFF8B5CF6),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             const Text(
               'Build your first game',
               style: TextStyle(
@@ -1245,20 +1237,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   color: const Color(0xFF8B5CF6),
                   borderRadius: BorderRadius.circular(30),
                 ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.add, size: 20, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text(
-                      'Make a Game',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
+                child: const Text(
+                  'Make a Game',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ),
