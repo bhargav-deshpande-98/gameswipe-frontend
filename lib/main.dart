@@ -1794,8 +1794,10 @@ class FriendsService {
     _friendIds = friends.toSet();
     final pending = prefs.getStringList(_pendingKey) ?? [];
     _pendingIds = pending.toSet();
-    if (!prefs.containsKey(_friendsKey)) {
+    final seedVersion = prefs.getInt('friends_seed_version') ?? 0;
+    if (seedVersion < 2) {
       _friendIds = {'u1', 'u2', 'u3', 'u4', 'u5', 'u6', 'u7', 'u8', 'u9', 'u10', 'u11'};
+      await prefs.setInt('friends_seed_version', 2);
       await _save();
     }
     _initialized = true;
