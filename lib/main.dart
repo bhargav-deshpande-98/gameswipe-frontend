@@ -1866,20 +1866,23 @@ class _VideoCardState extends State<VideoCard> {
                             behavior: HitTestBehavior.translucent,
                             onTap: () => widget.onPlayTap?.call(),
                             child: Align(
-                              alignment: Alignment.bottomRight,
+                              alignment: Alignment.bottomCenter,
                               child: Padding(
-                                padding: const EdgeInsets.all(16),
+                                padding: const EdgeInsets.only(bottom: 16),
                                 child: Container(
-                                  width: 40,
-                                  height: 40,
+                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.6),
-                                    shape: BoxShape.circle,
-                                  ),
-                                  child: const Icon(
-                                    Icons.play_arrow_rounded,
                                     color: Colors.white,
-                                    size: 24,
+                                    borderRadius: BorderRadius.circular(24),
+                                  ),
+                                  child: const Text(
+                                    'Play',
+                                    style: TextStyle(
+                                      color: Colors.black,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w600,
+                                      letterSpacing: 0.5,
+                                    ),
                                   ),
                                 ),
                               ),
