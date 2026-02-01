@@ -300,65 +300,76 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   Widget _buildSwipeLeftTutorialPage() {
     return SlideTransition(
       position: _slideLeftAnimation,
-      child: GestureDetector(
-        onHorizontalDragEnd: (details) {
-          // Detect swipe left (negative velocity means leftward)
-          if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
-            _completeOnboarding();
-          }
-        },
-        child: Container(
-          color: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Stack(
-            children: [
-              // Main content - centered
-              const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Spacer(flex: 2),
-                    Text(
-                      'Swipe left to\nstart playing',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
+      child: Container(
+        color: Colors.white,
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Stack(
+          children: [
+            // Main content - centered
+            Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Spacer(flex: 2),
+                  const Text(
+                    'Tap play to\nstart a game',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                    ),
+                  ),
+                  const SizedBox(height: 48),
+                  const TapPlayAnimation(),
+                  const Spacer(flex: 2),
+                  // "Get Started" button
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: _completeOnboarding,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.black,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          'Get Started',
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
                       ),
                     ),
-                    SizedBox(height: 48),
-                    SwipeLeftAnimation(),
-                    Spacer(flex: 2),
-                    // Chevrons at left center
-                    PulsingLeftChevrons(),
-                    Spacer(flex: 1),
-                  ],
-                ),
+                  ),
+                  const Spacer(flex: 1),
+                ],
               ),
-              // Back button
-              Positioned(
-                top: 16,
-                left: 0,
-                child: GestureDetector(
-                  onTap: () {
-                    _pageController.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  child: const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.arrow_back_ios,
-                      color: Colors.black54,
-                      size: 24,
-                    ),
+            ),
+            // Back button
+            Positioned(
+              top: 16,
+              left: 0,
+              child: GestureDetector(
+                onTap: () {
+                  _pageController.previousPage(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                  );
+                },
+                child: const Padding(
+                  padding: EdgeInsets.all(8),
+                  child: Icon(
+                    Icons.arrow_back_ios,
+                    color: Colors.black54,
+                    size: 24,
                   ),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
@@ -503,20 +514,20 @@ class _PulsingChevronsState extends State<PulsingChevrons>
 }
 
 // ============================================
-// SWIPE LEFT ANIMATION
+// TAP PLAY ANIMATION (for onboarding)
 // ============================================
 
-class SwipeLeftAnimation extends StatefulWidget {
-  const SwipeLeftAnimation({super.key});
+class TapPlayAnimation extends StatefulWidget {
+  const TapPlayAnimation({super.key});
 
   @override
-  State<SwipeLeftAnimation> createState() => _SwipeLeftAnimationState();
+  State<TapPlayAnimation> createState() => _TapPlayAnimationState();
 }
 
-class _SwipeLeftAnimationState extends State<SwipeLeftAnimation>
+class _TapPlayAnimationState extends State<TapPlayAnimation>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _slideAnimation;
+  late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
 
   @override
@@ -527,15 +538,20 @@ class _SwipeLeftAnimationState extends State<SwipeLeftAnimation>
       vsync: this,
     )..repeat();
 
-    // Hand moves LEFT: starts at right (0) and moves left (60)
-    _slideAnimation = Tween<double>(begin: 0, end: 60).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    // Finger taps: scales down then back up
+    _scaleAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 1.0, end: 0.85), weight: 30),
+      TweenSequenceItem(tween: Tween(begin: 0.85, end: 1.0), weight: 30),
+      TweenSequenceItem(tween: ConstantTween(1.0), weight: 40),
+    ]).animate(_controller);
 
-    // Fade out as hand moves left
-    _opacityAnimation = Tween<double>(begin: 1, end: 0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.5, 1.0)),
-    );
+    // Ripple fades in then out
+    _opacityAnimation = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween(0.0), weight: 25),
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: 0.6), weight: 15),
+      TweenSequenceItem(tween: Tween(begin: 0.6, end: 0.0), weight: 30),
+      TweenSequenceItem(tween: ConstantTween(0.0), weight: 30),
+    ]).animate(_controller);
   }
 
   @override
@@ -560,18 +576,57 @@ class _SwipeLeftAnimationState extends State<SwipeLeftAnimation>
               borderRadius: BorderRadius.circular(16),
             ),
             child: Center(
-              child: Icon(Icons.videogame_asset, size: 40, color: Colors.grey[500]),
+              // Play button inside phone
+              child: AnimatedBuilder(
+                animation: _controller,
+                builder: (context, child) {
+                  return Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      // Ripple effect
+                      Opacity(
+                        opacity: _opacityAnimation.value,
+                        child: Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.black45, width: 2),
+                          ),
+                        ),
+                      ),
+                      // Play button
+                      Transform.scale(
+                        scale: _scaleAnimation.value,
+                        child: Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.grey[500],
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
             ),
           ),
-          // Animated hand
+          // Animated hand tapping
           AnimatedBuilder(
             animation: _controller,
             builder: (context, child) {
               return Positioned(
-                right: 30 + _slideAnimation.value,
-                bottom: 60,
-                child: Opacity(
-                  opacity: _opacityAnimation.value,
+                right: 55,
+                bottom: 50,
+                child: Transform.scale(
+                  scale: _scaleAnimation.value,
                   child: const Icon(
                     Icons.touch_app,
                     size: 48,
@@ -583,59 +638,6 @@ class _SwipeLeftAnimationState extends State<SwipeLeftAnimation>
           ),
         ],
       ),
-    );
-  }
-}
-
-// ============================================
-// PULSING LEFT CHEVRONS
-// ============================================
-
-class PulsingLeftChevrons extends StatefulWidget {
-  const PulsingLeftChevrons({super.key});
-
-  @override
-  State<PulsingLeftChevrons> createState() => _PulsingLeftChevronsState();
-}
-
-class _PulsingLeftChevronsState extends State<PulsingLeftChevrons>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 1000),
-      vsync: this,
-    )..repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _controller,
-      builder: (context, child) {
-        return Opacity(
-          opacity: 0.3 + (_controller.value * 0.7),
-          child: Transform.translate(
-            offset: Offset(-_controller.value * 5, 0),
-            child: const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.keyboard_arrow_left, size: 32, color: Colors.grey),
-                Icon(Icons.keyboard_arrow_left, size: 32, color: Colors.grey),
-              ],
-            ),
-          ),
-        );
-      },
     );
   }
 }
@@ -1103,7 +1105,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Swipe left on games to play them',
+                'Tap play on games to start playing',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[500],
@@ -1632,27 +1634,21 @@ class _FeedScreenState extends State<FeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
-          onSwipeLeft();
-        }
+    return PageView.builder(
+      scrollDirection: Axis.vertical,
+      itemCount: shuffledVideos.length,
+      onPageChanged: (index) => setState(() => currentIndex = index),
+      itemBuilder: (context, index) {
+        return VideoCard(
+          video: shuffledVideos[index],
+          isActive: index == currentIndex && !_isGameOpen,
+          onPlayTap: onSwipeLeft,
+          onLikeChanged: () {
+            setState(() {});
+            widget.onLikeChanged?.call();
+          },
+        );
       },
-      child: PageView.builder(
-        scrollDirection: Axis.vertical,
-        itemCount: shuffledVideos.length,
-        onPageChanged: (index) => setState(() => currentIndex = index),
-        itemBuilder: (context, index) {
-          return VideoCard(
-            video: shuffledVideos[index],
-            isActive: index == currentIndex && !_isGameOpen,
-            onLikeChanged: () {
-              setState(() {});
-              widget.onLikeChanged?.call();
-            },
-          );
-        },
-      ),
     );
   }
 }
@@ -1736,27 +1732,21 @@ class _LikedGamesScreenState extends State<LikedGamesScreen> {
       );
     }
 
-    return GestureDetector(
-      onHorizontalDragEnd: (details) {
-        if (details.primaryVelocity != null && details.primaryVelocity! < -500) {
-          onSwipeLeft();
-        }
+    return PageView.builder(
+      scrollDirection: Axis.vertical,
+      itemCount: likedGames.length,
+      onPageChanged: (index) => setState(() => currentIndex = index),
+      itemBuilder: (context, index) {
+        return VideoCard(
+          video: likedGames[index],
+          isActive: index == currentIndex && !_isGameOpen,
+          onPlayTap: onSwipeLeft,
+          onLikeChanged: () {
+            setState(() {});
+            widget.onLikeChanged?.call();
+          },
+        );
       },
-      child: PageView.builder(
-        scrollDirection: Axis.vertical,
-        itemCount: likedGames.length,
-        onPageChanged: (index) => setState(() => currentIndex = index),
-        itemBuilder: (context, index) {
-          return VideoCard(
-            video: likedGames[index],
-            isActive: index == currentIndex && !_isGameOpen,
-            onLikeChanged: () {
-              setState(() {});
-              widget.onLikeChanged?.call();
-            },
-          );
-        },
-      ),
     );
   }
 }
@@ -1765,25 +1755,39 @@ class VideoCard extends StatefulWidget {
   final Map<String, dynamic> video;
   final bool isActive;
   final VoidCallback? onLikeChanged;
+  final VoidCallback? onPlayTap;
 
   const VideoCard({
     super.key,
     required this.video,
     required this.isActive,
     this.onLikeChanged,
+    this.onPlayTap,
   });
 
   @override
   State<VideoCard> createState() => _VideoCardState();
 }
 
-class _VideoCardState extends State<VideoCard> {
+class _VideoCardState extends State<VideoCard>
+    with SingleTickerProviderStateMixin {
   late VideoPlayerController controller;
   bool isInitialized = false;
+  late AnimationController _pulseController;
+  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
+
+    _pulseController = AnimationController(
+      duration: const Duration(milliseconds: 1500),
+      vsync: this,
+    )..repeat(reverse: true);
+    _pulseAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
     controller = VideoPlayerController.asset(widget.video['video'])
       ..initialize().then((_) {
         setState(() => isInitialized = true);
@@ -1804,6 +1808,7 @@ class _VideoCardState extends State<VideoCard> {
 
   @override
   void dispose() {
+    _pulseController.dispose();
     controller.dispose();
     super.dispose();
   }
@@ -1852,18 +1857,56 @@ class _VideoCardState extends State<VideoCard> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(24),
-                  child: Container(
-                    color: Colors.black,
-                    width: double.infinity,
-                    child: isInitialized
-                        ? Align(
-                            alignment: Alignment.topCenter,
-                            child: AspectRatio(
-                              aspectRatio: controller.value.aspectRatio,
-                              child: VideoPlayer(controller),
+                  child: Stack(
+                    children: [
+                      Container(
+                        color: Colors.black,
+                        width: double.infinity,
+                        height: double.infinity,
+                        child: isInitialized
+                            ? Align(
+                                alignment: Alignment.topCenter,
+                                child: AspectRatio(
+                                  aspectRatio: controller.value.aspectRatio,
+                                  child: VideoPlayer(controller),
+                                ),
+                              )
+                            : const Center(child: CircularProgressIndicator(color: Colors.white)),
+                      ),
+                      if (isInitialized)
+                        Positioned.fill(
+                          child: GestureDetector(
+                            behavior: HitTestBehavior.translucent,
+                            onTap: () => widget.onPlayTap?.call(),
+                            child: Center(
+                              child: AnimatedBuilder(
+                                animation: _pulseAnimation,
+                                builder: (context, child) => Transform.scale(
+                                  scale: _pulseAnimation.value,
+                                  child: child,
+                                ),
+                                child: Container(
+                                  width: 72,
+                                  height: 72,
+                                  decoration: BoxDecoration(
+                                    color: Colors.black.withValues(alpha: 0.5),
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.3),
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.play_arrow_rounded,
+                                    color: Colors.white,
+                                    size: 40,
+                                  ),
+                                ),
+                              ),
                             ),
-                          )
-                        : const Center(child: CircularProgressIndicator(color: Colors.white)),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
               ),
