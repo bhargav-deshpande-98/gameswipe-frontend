@@ -1725,6 +1725,66 @@ class FriendsService {
       'gamesPlayed': 21,
       'gamesInCommon': 2,
     },
+    {
+      'id': 'u9',
+      'name': 'Priya Sharma',
+      'username': '@priya_s',
+      'avatarColor': 0xFFE11D48,
+      'avatarEmoji': '🌟',
+      'isOnline': true,
+      'gamesPlayed': 36,
+      'gamesInCommon': 4,
+    },
+    {
+      'id': 'u10',
+      'name': 'Nate Collins',
+      'username': '@nate_c',
+      'avatarColor': 0xFF0EA5E9,
+      'avatarEmoji': '🎧',
+      'isOnline': false,
+      'gamesPlayed': 29,
+      'gamesInCommon': 3,
+    },
+    {
+      'id': 'u11',
+      'name': 'Zoe Nakamura',
+      'username': '@zoe_n',
+      'avatarColor': 0xFFD946EF,
+      'avatarEmoji': '✨',
+      'isOnline': true,
+      'gamesPlayed': 48,
+      'gamesInCommon': 5,
+    },
+    {
+      'id': 'u12',
+      'name': 'Leo Fernandez',
+      'username': '@leo_f',
+      'avatarColor': 0xFFF97316,
+      'avatarEmoji': '🦁',
+      'isOnline': false,
+      'gamesPlayed': 15,
+      'gamesInCommon': 1,
+    },
+    {
+      'id': 'u13',
+      'name': 'Ava Thompson',
+      'username': '@ava_t',
+      'avatarColor': 0xFF22D3EE,
+      'avatarEmoji': '💎',
+      'isOnline': true,
+      'gamesPlayed': 52,
+      'gamesInCommon': 7,
+    },
+    {
+      'id': 'u14',
+      'name': 'Kai Johansson',
+      'username': '@kai_j',
+      'avatarColor': 0xFF84CC16,
+      'avatarEmoji': '🏅',
+      'isOnline': false,
+      'gamesPlayed': 31,
+      'gamesInCommon': 2,
+    },
   ];
 
   static Future<void> init() async {
@@ -1735,7 +1795,7 @@ class FriendsService {
     final pending = prefs.getStringList(_pendingKey) ?? [];
     _pendingIds = pending.toSet();
     if (!prefs.containsKey(_friendsKey)) {
-      _friendIds = {'u1', 'u2', 'u3', 'u4', 'u5'};
+      _friendIds = {'u1', 'u2', 'u3', 'u4', 'u5', 'u6', 'u7', 'u8', 'u9', 'u10', 'u11'};
       await _save();
     }
     _initialized = true;
