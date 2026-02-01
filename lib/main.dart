@@ -2603,7 +2603,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 final videos = [
-  {'id': 3, 'title': 'Circlify', 'video': 'assets/videos/Game3.mov', 'gameUrl': 'https://circlify-game.vercel.app/', 'creator': '@borg'},
+  {'id': 3, 'title': 'Circlify', 'video': 'assets/videos/circlify_with_sound.mov', 'gameUrl': 'https://circlify-game.vercel.app/', 'creator': '@borg'},
   {'id': 4, 'title': 'aa-speed', 'video': 'assets/videos/aa_with_sound.mov', 'gameUrl': 'https://aa-game.vercel.app/', 'creator': '@varin'},
   {'id': 5, 'title': 'Agar', 'video': 'assets/videos/agar-io.mov', 'gameUrl': 'https://agar-io-game-pc3l.vercel.app/', 'creator': '@borg'},
   {'id': 6, 'title': 'Crossy Road', 'video': 'assets/videos/crossy_road_with_sound.mov', 'gameUrl': 'https://crossy-road-game-lo43.vercel.app/', 'creator': '@varin'},
