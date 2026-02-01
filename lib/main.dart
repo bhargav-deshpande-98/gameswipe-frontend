@@ -1238,7 +1238,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   borderRadius: BorderRadius.circular(30),
                 ),
                 child: const Text(
-                  'Make a Game',
+                  'Create a Game',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w600,
@@ -1339,7 +1339,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 24),
             const Text(
-              'Make a Game',
+              'Create a Game',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
