@@ -1786,7 +1786,7 @@ class FriendsService {
   }
 
   static List<Map<String, dynamic>> getLeaderboard() {
-    final all = List<Map<String, dynamic>>.from(mockUsers);
+    final all = List<Map<String, dynamic>>.from(getFriends());
     all.add({
       'id': 'current_user',
       'name': 'You',
