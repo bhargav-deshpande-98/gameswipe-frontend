@@ -20,6 +20,7 @@ void main() async {
   final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
   await LikedGamesService.init();
   await RecentlyPlayedService.init();
+  await FriendsService.init();
 
   runApp(PlaybiteApp(showOnboarding: !onboardingComplete));
 }
@@ -730,14 +731,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final GlobalKey<_ProfileScreenState> _profileKey = GlobalKey<_ProfileScreenState>();
 
   // Theme colors based on current tab
-  bool get _isDarkTheme => _currentIndex == 0; // Home tab is dark, Me tab is light
+  bool get _isDarkTheme => true; // All tabs use dark theme
 
   void _onTabChanged(int index) {
     setState(() {
       _currentIndex = index;
     });
     // Refresh profile screen when navigating to it
-    if (index == 1) {
+    if (index == 2) {
       _profileKey.currentState?.refresh();
     }
   }
@@ -754,6 +755,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         index: _currentIndex,
         children: [
           const HomeScreen(),
+          const FriendsScreen(),
           ProfileScreen(key: _profileKey),
         ],
       ),
@@ -778,6 +780,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ),
                 _buildNavItem(
                   index: 1,
+                  icon: Icons.people_outline,
+                  activeIcon: Icons.people,
+                  label: 'Friends',
+                ),
+                _buildNavItem(
+                  index: 2,
                   icon: Icons.person_outline,
                   activeIcon: Icons.person,
                   label: 'Me',
@@ -870,9 +878,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final likedGamesCount = LikedGamesService.getLikedGames().length;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.black,
       appBar: AppBar(
-        backgroundColor: Colors.white,
+        backgroundColor: Colors.black,
         elevation: 0,
         centerTitle: true,
         title: Row(
@@ -881,18 +889,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Text(
               _nickname,
               style: const TextStyle(
-                color: Colors.black,
+                color: Colors.white,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(width: 4),
-            const Icon(Icons.keyboard_arrow_down, color: Colors.black, size: 20),
+            const Icon(Icons.keyboard_arrow_down, color: Colors.white, size: 20),
           ],
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.more_horiz, color: Colors.black),
+            icon: const Icon(Icons.more_horiz, color: Colors.white),
             onPressed: () {},
           ),
         ],
@@ -908,7 +916,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 height: 96,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.grey[300]!, width: 1),
+                  border: Border.all(color: Colors.white24, width: 1),
                 ),
                 child: ClipOval(
                   child: SvgPicture.asset(
@@ -926,7 +934,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               '@${_nickname.toLowerCase().replaceAll(' ', '_')}',
               style: const TextStyle(
                 fontSize: 16,
-                color: Colors.black87,
+                color: Colors.white60,
               ),
             ),
             const SizedBox(height: 24),
@@ -938,7 +946,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   height: 30,
                   width: 1,
-                  color: Colors.grey[300],
+                  color: Colors.white24,
                   margin: const EdgeInsets.symmetric(horizontal: 32),
                 ),
                 _buildStatColumn('$likedGamesCount', 'Liked'),
@@ -956,7 +964,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     _showEditProfileDialog();
                   },
                   style: OutlinedButton.styleFrom(
-                    side: BorderSide(color: Colors.grey[300]!),
+                    side: const BorderSide(color: Colors.white24),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(4),
                     ),
@@ -964,7 +972,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   child: const Text(
                     'Edit profile',
                     style: TextStyle(
-                      color: Colors.black,
+                      color: Colors.white,
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                     ),
@@ -974,11 +982,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const SizedBox(height: 16),
             // Bio placeholder
-            Text(
+            const Text(
               'Tap to add bio',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[500],
+                color: Colors.white38,
               ),
             ),
             const SizedBox(height: 24),
@@ -993,7 +1001,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: _selectedTab == 0 ? Colors.black : Colors.grey[300]!,
+                            color: _selectedTab == 0 ? Colors.white : Colors.white12,
                             width: _selectedTab == 0 ? 2 : 1,
                           ),
                         ),
@@ -1004,7 +1012,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Icon(
                             Icons.add_circle_outline,
                             size: 20,
-                            color: _selectedTab == 0 ? Colors.black : Colors.grey[500],
+                            color: _selectedTab == 0 ? Colors.white : Colors.white38,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -1012,7 +1020,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: _selectedTab == 0 ? FontWeight.w600 : FontWeight.normal,
-                              color: _selectedTab == 0 ? Colors.black : Colors.grey[500],
+                              color: _selectedTab == 0 ? Colors.white : Colors.white38,
                             ),
                           ),
                         ],
@@ -1028,7 +1036,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       decoration: BoxDecoration(
                         border: Border(
                           bottom: BorderSide(
-                            color: _selectedTab == 1 ? Colors.black : Colors.grey[300]!,
+                            color: _selectedTab == 1 ? Colors.white : Colors.white12,
                             width: _selectedTab == 1 ? 2 : 1,
                           ),
                         ),
@@ -1039,7 +1047,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           Icon(
                             Icons.play_circle_outline,
                             size: 20,
-                            color: _selectedTab == 1 ? Colors.black : Colors.grey[500],
+                            color: _selectedTab == 1 ? Colors.white : Colors.white38,
                           ),
                           const SizedBox(width: 6),
                           Text(
@@ -1047,7 +1055,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             style: TextStyle(
                               fontSize: 15,
                               fontWeight: _selectedTab == 1 ? FontWeight.w600 : FontWeight.normal,
-                              color: _selectedTab == 1 ? Colors.black : Colors.grey[500],
+                              color: _selectedTab == 1 ? Colors.white : Colors.white38,
                             ),
                           ),
                         ],
@@ -1077,7 +1085,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           width: double.infinity,
           padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
           decoration: BoxDecoration(
-            color: Colors.grey[100],
+            color: Colors.white.withValues(alpha: 0.08),
             borderRadius: BorderRadius.circular(16),
           ),
           child: Column(
@@ -1086,31 +1094,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
               Container(
                 width: 72,
                 height: 72,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.grey[300],
+                  color: Colors.white12,
                 ),
-                child: Icon(
+                child: const Icon(
                   Icons.play_circle_outline,
                   size: 40,
-                  color: Colors.grey[600],
+                  color: Colors.white38,
                 ),
               ),
               const SizedBox(height: 16),
-              Text(
+              const Text(
                 'No games played yet',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w600,
-                  color: Colors.grey[700],
+                  color: Colors.white60,
                 ),
               ),
               const SizedBox(height: 8),
-              Text(
+              const Text(
                 'Tap play on games to start playing',
                 style: TextStyle(
                   fontSize: 14,
-                  color: Colors.grey[500],
+                  color: Colors.white38,
                 ),
               ),
             ],
@@ -1157,7 +1165,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: Container(
               width: double.infinity,
               decoration: BoxDecoration(
-                color: Colors.grey[200],
+                color: Colors.white.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: ClipRRect(
@@ -1171,7 +1179,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             game['title'] as String,
             style: const TextStyle(
               fontSize: 11,
-              color: Colors.black87,
+              color: Colors.white60,
             ),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -1190,7 +1198,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 48, horizontal: 24),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -1199,31 +1207,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
             Container(
               width: 72,
               height: 72,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.grey[300],
+                color: Colors.white12,
               ),
-              child: Icon(
+              child: const Icon(
                 Icons.add,
                 size: 40,
-                color: Colors.grey[600],
+                color: Colors.white38,
               ),
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               'Build your first game',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey[700],
+                color: Colors.white60,
               ),
             ),
             const SizedBox(height: 8),
-            Text(
+            const Text(
               'No code. Just prompt, create, play.',
               style: TextStyle(
                 fontSize: 14,
-                color: Colors.grey[500],
+                color: Colors.white38,
               ),
             ),
             const SizedBox(height: 24),
@@ -1266,15 +1274,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
           style: const TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.black,
+            color: Colors.white,
           ),
         ),
         const SizedBox(height: 4),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
-            color: Colors.grey[600],
+            color: Colors.white60,
           ),
         ),
       ],
@@ -1323,7 +1331,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       backgroundColor: Colors.transparent,
       builder: (context) => Container(
         decoration: const BoxDecoration(
-          color: Colors.white,
+          color: Color(0xFF1A1A2E),
           borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
         ),
         padding: const EdgeInsets.all(24),
@@ -1337,7 +1345,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: Colors.grey[300],
+                  color: Colors.white24,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -1348,7 +1356,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
-                color: Colors.black,
+                color: Colors.white,
               ),
               textAlign: TextAlign.center,
             ),
@@ -1397,16 +1405,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.grey[100],
+          color: Colors.white.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: Colors.white12),
         ),
         child: Row(
           children: [
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: const Color(0xFF8B5CF6).withValues(alpha: 0.1),
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Icon(icon, color: const Color(0xFF8B5CF6), size: 24),
@@ -1421,21 +1429,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.black,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 14,
-                      color: Colors.grey[600],
+                      color: Colors.white60,
                     ),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right, color: Colors.grey[400]),
+            const Icon(Icons.chevron_right, color: Colors.white38),
           ],
         ),
       ),
@@ -1622,6 +1630,913 @@ class LikedGamesService {
 
   static List<Map<String, dynamic>> getLikedGames() {
     return videos.where((v) => _likedGameIds.contains(v['id'])).toList();
+  }
+}
+
+// ============================================
+// FRIENDS SERVICE
+// ============================================
+
+class FriendsService {
+  static const String _friendsKey = 'friend_ids';
+  static const String _pendingKey = 'pending_friend_ids';
+  static Set<String> _friendIds = {};
+  static Set<String> _pendingIds = {};
+  static bool _initialized = false;
+
+  static final List<Map<String, dynamic>> mockUsers = [
+    {
+      'id': 'u1',
+      'name': 'Alex Chen',
+      'username': '@alex_chen',
+      'avatarColor': 0xFF8B5CF6,
+      'avatarEmoji': '🎮',
+      'isOnline': true,
+      'gamesPlayed': 42,
+      'gamesInCommon': 3,
+    },
+    {
+      'id': 'u2',
+      'name': 'Maya Patel',
+      'username': '@maya_p',
+      'avatarColor': 0xFFEF4444,
+      'avatarEmoji': '🕹️',
+      'isOnline': true,
+      'gamesPlayed': 38,
+      'gamesInCommon': 5,
+    },
+    {
+      'id': 'u3',
+      'name': 'Jordan Lee',
+      'username': '@jlee99',
+      'avatarColor': 0xFF3B82F6,
+      'avatarEmoji': '🏆',
+      'isOnline': false,
+      'gamesPlayed': 27,
+      'gamesInCommon': 2,
+    },
+    {
+      'id': 'u4',
+      'name': 'Sam Rivera',
+      'username': '@sam_r',
+      'avatarColor': 0xFF10B981,
+      'avatarEmoji': '⚡',
+      'isOnline': true,
+      'gamesPlayed': 55,
+      'gamesInCommon': 4,
+    },
+    {
+      'id': 'u5',
+      'name': 'Taylor Kim',
+      'username': '@tkim',
+      'avatarColor': 0xFFF59E0B,
+      'avatarEmoji': '🎯',
+      'isOnline': false,
+      'gamesPlayed': 19,
+      'gamesInCommon': 1,
+    },
+    {
+      'id': 'u6',
+      'name': 'Riley Brooks',
+      'username': '@riley_b',
+      'avatarColor': 0xFFEC4899,
+      'avatarEmoji': '🔥',
+      'isOnline': false,
+      'gamesPlayed': 33,
+      'gamesInCommon': 3,
+    },
+    {
+      'id': 'u7',
+      'name': 'Casey Wu',
+      'username': '@casey_w',
+      'avatarColor': 0xFF6366F1,
+      'avatarEmoji': '🚀',
+      'isOnline': true,
+      'gamesPlayed': 45,
+      'gamesInCommon': 6,
+    },
+    {
+      'id': 'u8',
+      'name': 'Drew Martinez',
+      'username': '@drew_m',
+      'avatarColor': 0xFF14B8A6,
+      'avatarEmoji': '🎲',
+      'isOnline': false,
+      'gamesPlayed': 21,
+      'gamesInCommon': 2,
+    },
+    {
+      'id': 'u9',
+      'name': 'Priya Sharma',
+      'username': '@priya_s',
+      'avatarColor': 0xFFE11D48,
+      'avatarEmoji': '🌟',
+      'isOnline': true,
+      'gamesPlayed': 36,
+      'gamesInCommon': 4,
+    },
+    {
+      'id': 'u10',
+      'name': 'Nate Collins',
+      'username': '@nate_c',
+      'avatarColor': 0xFF0EA5E9,
+      'avatarEmoji': '🎧',
+      'isOnline': false,
+      'gamesPlayed': 29,
+      'gamesInCommon': 3,
+    },
+    {
+      'id': 'u11',
+      'name': 'Zoe Nakamura',
+      'username': '@zoe_n',
+      'avatarColor': 0xFFD946EF,
+      'avatarEmoji': '✨',
+      'isOnline': true,
+      'gamesPlayed': 48,
+      'gamesInCommon': 5,
+    },
+    {
+      'id': 'u12',
+      'name': 'Leo Fernandez',
+      'username': '@leo_f',
+      'avatarColor': 0xFFF97316,
+      'avatarEmoji': '🦁',
+      'isOnline': false,
+      'gamesPlayed': 15,
+      'gamesInCommon': 1,
+    },
+    {
+      'id': 'u13',
+      'name': 'Ava Thompson',
+      'username': '@ava_t',
+      'avatarColor': 0xFF22D3EE,
+      'avatarEmoji': '💎',
+      'isOnline': true,
+      'gamesPlayed': 52,
+      'gamesInCommon': 7,
+    },
+    {
+      'id': 'u14',
+      'name': 'Kai Johansson',
+      'username': '@kai_j',
+      'avatarColor': 0xFF84CC16,
+      'avatarEmoji': '🏅',
+      'isOnline': false,
+      'gamesPlayed': 31,
+      'gamesInCommon': 2,
+    },
+  ];
+
+  static Future<void> init() async {
+    if (_initialized) return;
+    final prefs = await SharedPreferences.getInstance();
+    final friends = prefs.getStringList(_friendsKey) ?? [];
+    _friendIds = friends.toSet();
+    final pending = prefs.getStringList(_pendingKey) ?? [];
+    _pendingIds = pending.toSet();
+    final seedVersion = prefs.getInt('friends_seed_version') ?? 0;
+    if (seedVersion < 2) {
+      _friendIds = {'u1', 'u2', 'u3', 'u4', 'u5', 'u6', 'u7', 'u8', 'u9', 'u10', 'u11'};
+      await prefs.setInt('friends_seed_version', 2);
+      await _save();
+    }
+    _initialized = true;
+  }
+
+  static Future<void> _save() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_friendsKey, _friendIds.toList());
+    await prefs.setStringList(_pendingKey, _pendingIds.toList());
+  }
+
+  static bool isFriend(String userId) => _friendIds.contains(userId);
+  static bool isPending(String userId) => _pendingIds.contains(userId);
+
+  static List<Map<String, dynamic>> getFriends() {
+    return mockUsers.where((u) => _friendIds.contains(u['id'])).toList();
+  }
+
+  static Future<void> addFriend(String userId) async {
+    _pendingIds.add(userId);
+    await _save();
+  }
+
+  static Future<void> removeFriend(String userId) async {
+    _friendIds.remove(userId);
+    _pendingIds.remove(userId);
+    await _save();
+  }
+
+  static Future<void> cancelPending(String userId) async {
+    _pendingIds.remove(userId);
+    await _save();
+  }
+
+  static List<Map<String, dynamic>> getSuggestedFriends() {
+    return mockUsers.where((u) =>
+      !_friendIds.contains(u['id']) && !_pendingIds.contains(u['id'])
+    ).toList();
+  }
+
+  static List<Map<String, dynamic>> searchUsers(String query) {
+    if (query.isEmpty) return [];
+    final q = query.toLowerCase();
+    return mockUsers.where((u) =>
+      (u['name'] as String).toLowerCase().contains(q) ||
+      (u['username'] as String).toLowerCase().contains(q)
+    ).toList();
+  }
+
+  static List<Map<String, dynamic>> getLeaderboard() {
+    final all = List<Map<String, dynamic>>.from(getFriends());
+    all.add({
+      'id': 'current_user',
+      'name': 'You',
+      'username': '@you',
+      'avatarColor': 0xFF8B5CF6,
+      'avatarEmoji': '👤',
+      'isOnline': true,
+      'gamesPlayed': RecentlyPlayedService.getUniqueGamesPlayedCount(),
+      'gamesInCommon': 0,
+    });
+    all.sort((a, b) => (b['gamesPlayed'] as int).compareTo(a['gamesPlayed'] as int));
+    return all;
+  }
+}
+
+// ============================================
+// FRIENDS SCREEN
+// ============================================
+
+class FriendsScreen extends StatefulWidget {
+  const FriendsScreen({super.key});
+
+  @override
+  State<FriendsScreen> createState() => _FriendsScreenState();
+}
+
+class _FriendsScreenState extends State<FriendsScreen> {
+  int _selectedTab = 0; // 0 = My Friends, 1 = Find Friends, 2 = Leaderboard
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: SafeArea(
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            _buildTabBar(),
+            const SizedBox(height: 8),
+            Expanded(
+              child: _selectedTab == 0
+                  ? _buildMyFriendsTab()
+                  : _selectedTab == 1
+                      ? _buildFindFriendsTab()
+                      : _buildLeaderboardTab(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTabBar() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildTabLabel('My Friends', 0),
+        const SizedBox(width: 8),
+        const Text('|', style: TextStyle(color: Colors.white60)),
+        const SizedBox(width: 8),
+        _buildTabLabel('Find Friends', 1),
+        const SizedBox(width: 8),
+        const Text('|', style: TextStyle(color: Colors.white60)),
+        const SizedBox(width: 8),
+        _buildTabLabel('Leaderboard', 2),
+      ],
+    );
+  }
+
+  Widget _buildTabLabel(String text, int tabIndex) {
+    return GestureDetector(
+      onTap: () => setState(() => _selectedTab = tabIndex),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 17,
+          fontWeight: _selectedTab == tabIndex ? FontWeight.bold : FontWeight.normal,
+          color: _selectedTab == tabIndex ? Colors.white : Colors.white60,
+        ),
+      ),
+    );
+  }
+
+  // ---- My Friends Tab ----
+
+  Widget _buildMyFriendsTab() {
+    final friends = FriendsService.getFriends();
+
+    if (friends.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.people_outline, size: 64, color: Colors.white38),
+            SizedBox(height: 16),
+            Text(
+              'No friends yet',
+              style: TextStyle(fontSize: 18, color: Colors.white60),
+            ),
+            SizedBox(height: 8),
+            Text(
+              'Find friends to play with!',
+              style: TextStyle(fontSize: 14, color: Colors.white38),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: friends.length,
+      itemBuilder: (context, index) {
+        final friend = friends[index];
+        return _buildFriendListTile(friend);
+      },
+    );
+  }
+
+  Widget _buildFriendListTile(Map<String, dynamic> friend) {
+    return GestureDetector(
+      onTap: () => _showFriendProfile(friend),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.white12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(friend['avatarColor'] as int),
+              ),
+              child: Center(
+                child: Text(
+                  friend['avatarEmoji'] as String,
+                  style: const TextStyle(fontSize: 22),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    friend['name'] as String,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    friend['username'] as String,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Colors.white60,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: (friend['isOnline'] as bool) ? Colors.green : Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showFriendProfile(Map<String, dynamic> friend) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => Container(
+        decoration: const BoxDecoration(
+          color: Color(0xFF1A1A2E),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white24,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Color(friend['avatarColor'] as int),
+              ),
+              child: Center(
+                child: Text(
+                  friend['avatarEmoji'] as String,
+                  style: const TextStyle(fontSize: 36),
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              friend['name'] as String,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              friend['username'] as String,
+              style: const TextStyle(fontSize: 16, color: Colors.white60),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${friend['gamesInCommon']} games in common',
+                style: const TextStyle(
+                  color: Color(0xFF8B5CF6),
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Row(
+              children: [
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.pop(sheetContext);
+                      _showComingSoonDialog('Challenge');
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF8B5CF6),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.sports_esports, size: 20, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            'Challenge',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: GestureDetector(
+                    onTap: () async {
+                      await FriendsService.removeFriend(friend['id'] as String);
+                      if (sheetContext.mounted) Navigator.pop(sheetContext);
+                      setState(() {});
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(30),
+                        border: Border.all(color: Colors.white24),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.person_remove, size: 20, color: Colors.white70),
+                          SizedBox(width: 8),
+                          Text(
+                            'Remove',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white70,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showComingSoonDialog(String feature) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Coming Soon!'),
+        content: Text(
+          '$feature feature is currently in development. Stay tuned!',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---- Find Friends Tab ----
+
+  Widget _buildFindFriendsTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            margin: const EdgeInsets.only(top: 8, bottom: 20),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.08),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white12),
+            ),
+            child: TextField(
+              controller: _searchController,
+              style: const TextStyle(color: Colors.white),
+              decoration: const InputDecoration(
+                icon: Icon(Icons.search, color: Colors.white60),
+                hintText: 'Search by name or username',
+                hintStyle: TextStyle(color: Colors.white38),
+                border: InputBorder.none,
+              ),
+              onChanged: (val) => setState(() => _searchQuery = val),
+            ),
+          ),
+          if (_searchQuery.isNotEmpty) ...[
+            _buildSearchResults(),
+          ] else ...[
+            _buildSuggestedFriendsSection(),
+            const SizedBox(height: 24),
+            _buildPeopleYouMayKnowSection(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchResults() {
+    final results = FriendsService.searchUsers(_searchQuery);
+    if (results.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.only(top: 48),
+        child: Center(
+          child: Text(
+            'No users found',
+            style: TextStyle(color: Colors.white60, fontSize: 16),
+          ),
+        ),
+      );
+    }
+    return Column(
+      children: results.map((user) => _buildUserCard(user)).toList(),
+    );
+  }
+
+  Widget _buildSuggestedFriendsSection() {
+    final suggested = FriendsService.getSuggestedFriends();
+    if (suggested.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Suggested Friends',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 12),
+        ...suggested.map((user) => _buildUserCard(user)),
+      ],
+    );
+  }
+
+  Widget _buildPeopleYouMayKnowSection() {
+    final friends = FriendsService.getFriends();
+    if (friends.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'People You May Know',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 4),
+        const Text(
+          'Based on games you play',
+          style: TextStyle(fontSize: 14, color: Colors.white38),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 160,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: friends.length,
+            itemBuilder: (context, index) {
+              final friend = friends[index];
+              return _buildCompactUserCard(friend);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildUserCard(Map<String, dynamic> user) {
+    final isFriend = FriendsService.isFriend(user['id'] as String);
+    final isPending = FriendsService.isPending(user['id'] as String);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(user['avatarColor'] as int),
+            ),
+            child: Center(
+              child: Text(user['avatarEmoji'] as String, style: const TextStyle(fontSize: 22)),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user['name'] as String,
+                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  user['username'] as String,
+                  style: const TextStyle(fontSize: 14, color: Colors.white60),
+                ),
+              ],
+            ),
+          ),
+          GestureDetector(
+            onTap: () async {
+              if (!isFriend && !isPending) {
+                await FriendsService.addFriend(user['id'] as String);
+                setState(() {});
+              } else if (isPending) {
+                await FriendsService.cancelPending(user['id'] as String);
+                setState(() {});
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: isFriend
+                    ? Colors.white.withValues(alpha: 0.1)
+                    : isPending
+                        ? Colors.white.withValues(alpha: 0.1)
+                        : const Color(0xFF8B5CF6),
+                borderRadius: BorderRadius.circular(20),
+                border: isFriend || isPending
+                    ? Border.all(color: Colors.white24)
+                    : null,
+              ),
+              child: Text(
+                isFriend ? 'Friends' : isPending ? 'Pending' : 'Add Friend',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: isFriend || isPending ? Colors.white60 : Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCompactUserCard(Map<String, dynamic> user) {
+    return Container(
+      width: 120,
+      margin: const EdgeInsets.only(right: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.white12),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: Color(user['avatarColor'] as int),
+            ),
+            child: Center(
+              child: Text(user['avatarEmoji'] as String, style: const TextStyle(fontSize: 22)),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            user['name'] as String,
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: Colors.white),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            '${user['gamesPlayed']} games',
+            style: const TextStyle(fontSize: 12, color: Colors.white38),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---- Leaderboard Tab ----
+
+  Widget _buildLeaderboardTab() {
+    final leaderboard = FriendsService.getLeaderboard();
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: leaderboard.length,
+      itemBuilder: (context, index) {
+        final user = leaderboard[index];
+        final isCurrentUser = user['id'] == 'current_user';
+        final rank = index + 1;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: isCurrentUser
+                ? const Color(0xFF8B5CF6).withValues(alpha: 0.2)
+                : Colors.white.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isCurrentUser ? const Color(0xFF8B5CF6) : Colors.white12,
+            ),
+          ),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 32,
+                child: Text(
+                  rank <= 3
+                      ? ['🥇', '🥈', '🥉'][rank - 1]
+                      : '#$rank',
+                  style: TextStyle(
+                    fontSize: rank <= 3 ? 22 : 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Color(user['avatarColor'] as int),
+                ),
+                child: Center(
+                  child: Text(
+                    user['avatarEmoji'] as String,
+                    style: const TextStyle(fontSize: 18),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isCurrentUser ? 'You' : user['name'] as String,
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: isCurrentUser ? FontWeight.bold : FontWeight.w600,
+                        color: isCurrentUser ? const Color(0xFF8B5CF6) : Colors.white,
+                      ),
+                    ),
+                    if (!isCurrentUser)
+                      Text(
+                        user['username'] as String,
+                        style: const TextStyle(fontSize: 13, color: Colors.white60),
+                      ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '${user['gamesPlayed']}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                  ),
+                  const Text(
+                    'games',
+                    style: TextStyle(fontSize: 12, color: Colors.white38),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 }
 
