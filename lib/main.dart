@@ -1769,25 +1769,13 @@ class VideoCard extends StatefulWidget {
   State<VideoCard> createState() => _VideoCardState();
 }
 
-class _VideoCardState extends State<VideoCard>
-    with SingleTickerProviderStateMixin {
+class _VideoCardState extends State<VideoCard> {
   late VideoPlayerController controller;
   bool isInitialized = false;
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
 
   @override
   void initState() {
     super.initState();
-
-    _pulseController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat(reverse: true);
-    _pulseAnimation = Tween<double>(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
     controller = VideoPlayerController.asset(widget.video['video'])
       ..initialize().then((_) {
         setState(() => isInitialized = true);
@@ -1808,7 +1796,6 @@ class _VideoCardState extends State<VideoCard>
 
   @override
   void dispose() {
-    _pulseController.dispose();
     controller.dispose();
     super.dispose();
   }
@@ -1878,28 +1865,21 @@ class _VideoCardState extends State<VideoCard>
                           child: GestureDetector(
                             behavior: HitTestBehavior.translucent,
                             onTap: () => widget.onPlayTap?.call(),
-                            child: Center(
-                              child: AnimatedBuilder(
-                                animation: _pulseAnimation,
-                                builder: (context, child) => Transform.scale(
-                                  scale: _pulseAnimation.value,
-                                  child: child,
-                                ),
+                            child: Align(
+                              alignment: Alignment.bottomRight,
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
                                 child: Container(
-                                  width: 72,
-                                  height: 72,
+                                  width: 40,
+                                  height: 40,
                                   decoration: BoxDecoration(
-                                    color: Colors.black.withValues(alpha: 0.5),
+                                    color: Colors.black.withValues(alpha: 0.6),
                                     shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white.withValues(alpha: 0.3),
-                                      width: 1.5,
-                                    ),
                                   ),
                                   child: const Icon(
                                     Icons.play_arrow_rounded,
                                     color: Colors.white,
-                                    size: 40,
+                                    size: 24,
                                   ),
                                 ),
                               ),
