@@ -906,6 +906,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
       body: SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom + 80),
         child: Column(
           children: [
             const SizedBox(height: 20),
