@@ -754,7 +754,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          const HomeScreen(),
+          HomeScreen(isTabActive: _currentIndex == 0),
           const FriendsScreen(),
           ProfileScreen(key: _profileKey),
         ],
@@ -2532,7 +2532,8 @@ class _FriendsScreenState extends State<FriendsScreen> {
 // ============================================
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+  final bool isTabActive;
+  const HomeScreen({super.key, this.isTabActive = true});
 
   @override
   State<HomeScreen> createState() => _HomeScreenState();
@@ -2559,8 +2560,8 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         // Content
         _selectedTab == 0
-            ? FeedScreen(key: _feedKey, onLikeChanged: _onLikeChanged)
-            : LikedGamesScreen(onLikeChanged: _onLikeChanged),
+            ? FeedScreen(key: _feedKey, onLikeChanged: _onLikeChanged, isTabActive: widget.isTabActive)
+            : LikedGamesScreen(onLikeChanged: _onLikeChanged, isTabActive: widget.isTabActive),
         // Top tabs
         Positioned(
           top: MediaQuery.of(context).padding.top + 10,
@@ -2625,7 +2626,8 @@ final videos = [
 
 class FeedScreen extends StatefulWidget {
   final VoidCallback? onLikeChanged;
-  const FeedScreen({super.key, this.onLikeChanged});
+  final bool isTabActive;
+  const FeedScreen({super.key, this.onLikeChanged, this.isTabActive = true});
 
   @override
   State<FeedScreen> createState() => _FeedScreenState();
@@ -2718,7 +2720,7 @@ class _FeedScreenState extends State<FeedScreen> {
       itemBuilder: (context, index) {
         return VideoCard(
           video: shuffledVideos[index],
-          isActive: index == currentIndex && !_isGameOpen,
+          isActive: index == currentIndex && !_isGameOpen && widget.isTabActive,
           onPlayTap: onSwipeLeft,
           onLikeChanged: () {
             setState(() {});
@@ -2736,7 +2738,8 @@ class _FeedScreenState extends State<FeedScreen> {
 
 class LikedGamesScreen extends StatefulWidget {
   final VoidCallback? onLikeChanged;
-  const LikedGamesScreen({super.key, this.onLikeChanged});
+  final bool isTabActive;
+  const LikedGamesScreen({super.key, this.onLikeChanged, this.isTabActive = true});
 
   @override
   State<LikedGamesScreen> createState() => _LikedGamesScreenState();
@@ -2816,7 +2819,7 @@ class _LikedGamesScreenState extends State<LikedGamesScreen> {
       itemBuilder: (context, index) {
         return VideoCard(
           video: likedGames[index],
-          isActive: index == currentIndex && !_isGameOpen,
+          isActive: index == currentIndex && !_isGameOpen && widget.isTabActive,
           onPlayTap: onSwipeLeft,
           onLikeChanged: () {
             setState(() {});
