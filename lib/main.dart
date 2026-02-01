@@ -1870,19 +1870,33 @@ class _VideoCardState extends State<VideoCard> {
                               child: Padding(
                                 padding: const EdgeInsets.only(bottom: 16),
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                                  padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 10),
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: Colors.white.withValues(alpha: 0.85),
                                     borderRadius: BorderRadius.circular(24),
-                                  ),
-                                  child: const Text(
-                                    'Play',
-                                    style: TextStyle(
-                                      color: Colors.black,
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.w600,
-                                      letterSpacing: 0.5,
+                                    border: Border.all(
+                                      color: Colors.white.withValues(alpha: 0.4),
+                                      width: 1,
                                     ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.play_arrow_rounded,
+                                        color: Colors.black.withValues(alpha: 0.85),
+                                        size: 20,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Play',
+                                        style: TextStyle(
+                                          color: Colors.black.withValues(alpha: 0.85),
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
                                   ),
                                 ),
                               ),
