@@ -1365,7 +1365,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
               subtitle: 'Use AI to build your game',
               onTap: () {
                 Navigator.pop(context);
-                _showComingSoonDialog(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const GameScreen(
+                      title: 'Playbite Creator',
+                      gameUrl: 'https://lovable-games.fly.dev/',
+                    ),
+                  ),
+                );
               },
             ),
             const SizedBox(height: 12),
@@ -1447,23 +1455,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _showComingSoonDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Coming Soon!'),
-        content: const Text(
-          'Playbite Creator is currently in development. Soon you\'ll be able to create games using AI right from here!',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 // ============================================
