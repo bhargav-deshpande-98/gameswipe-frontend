@@ -3454,7 +3454,7 @@ class _GameScreenState extends State<GameScreen>
                       const SizedBox(height: 8),
                       // Loading text
                       Text(
-                        'Loading game...',
+                        'Loading ${widget.title}...',
                         style: TextStyle(
                           fontSize: 16,
                           color: Colors.grey[400],
