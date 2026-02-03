@@ -9,12 +9,19 @@ import 'package:share_plus/share_plus.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+
+  await dotenv.load(fileName: ".env");
+  await Supabase.initialize(
+    url: dotenv.env['SUPABASE_URL']!,
+    anonKey: dotenv.env['SUPABASE_ANON_KEY']!,
+  );
 
   final prefs = await SharedPreferences.getInstance();
   final onboardingComplete = prefs.getBool('onboarding_complete') ?? false;
@@ -1172,7 +1179,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: _GameThumbnailVideo(videoPath: game['video'] as String),
+                child: _GameThumbnailVideo(
+                  videoPath: game['video'] as String,
+                  isNetworkVideo: game['isFirebaseGame'] == true,
+                ),
               ),
             ),
           ),
@@ -1462,34 +1472,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
 class _GameThumbnailVideo extends StatefulWidget {
   final String videoPath;
+  final bool isNetworkVideo;
 
-  const _GameThumbnailVideo({required this.videoPath});
+  const _GameThumbnailVideo({
+    required this.videoPath,
+    this.isNetworkVideo = false,
+  });
 
   @override
   State<_GameThumbnailVideo> createState() => _GameThumbnailVideoState();
 }
 
 class _GameThumbnailVideoState extends State<_GameThumbnailVideo> {
-  late VideoPlayerController _controller;
+  VideoPlayerController? _controller;
   bool _isInitialized = false;
+  bool _isYouTube = false;
+  String? _youTubeThumbnailUrl;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.asset(widget.videoPath)
-      ..initialize().then((_) {
-        if (mounted) {
-          setState(() => _isInitialized = true);
-          // Seek to first frame and pause
-          _controller.seekTo(Duration.zero);
-          _controller.pause();
-        }
-      });
+
+    // Check for YouTube URL
+    if (widget.isNetworkVideo) {
+      final videoId = YouTubeHelper.extractVideoId(widget.videoPath);
+      if (videoId != null) {
+        _isYouTube = true;
+        _youTubeThumbnailUrl = YouTubeHelper.getThumbnailUrl(videoId);
+        _isInitialized = true;
+        return;
+      }
+    }
+
+    if (widget.isNetworkVideo) {
+      _controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoPath))
+        ..initialize().then((_) {
+          if (mounted) {
+            setState(() => _isInitialized = true);
+            _controller!.seekTo(Duration.zero);
+            _controller!.pause();
+          }
+        }).catchError((e) {
+          if (mounted) setState(() => _isInitialized = true);
+        });
+    } else {
+      _controller = VideoPlayerController.asset(widget.videoPath)
+        ..initialize().then((_) {
+          if (mounted) {
+            setState(() => _isInitialized = true);
+            _controller!.seekTo(Duration.zero);
+            _controller!.pause();
+          }
+        });
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -1508,12 +1548,25 @@ class _GameThumbnailVideoState extends State<_GameThumbnailVideo> {
       );
     }
 
+    if (_isYouTube) {
+      return Image.network(
+        _youTubeThumbnailUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => Container(
+          color: Colors.grey[300],
+          child: Center(
+            child: Icon(Icons.videogame_asset, color: Colors.grey[500], size: 24),
+          ),
+        ),
+      );
+    }
+
     return FittedBox(
       fit: BoxFit.cover,
       child: SizedBox(
-        width: _controller.value.size.width,
-        height: _controller.value.size.height,
-        child: VideoPlayer(_controller),
+        width: _controller!.value.size.width,
+        height: _controller!.value.size.height,
+        child: VideoPlayer(_controller!),
       ),
     );
   }
@@ -1575,9 +1628,9 @@ class RecentlyPlayedService {
   static List<Map<String, dynamic>> getRecentGames() {
     final List<Map<String, dynamic>> result = [];
     for (final id in _recentGameIds) {
-      final game = videos.where((v) => v['id'] == id).toList();
-      if (game.isNotEmpty) {
-        result.add(game.first);
+      final game = GameService.findGameById(id);
+      if (game != null) {
+        result.add(game);
       }
     }
     return result;
@@ -1616,7 +1669,8 @@ class LikedGamesService {
   }
 
   static List<Map<String, dynamic>> getLikedGames() {
-    return videos.where((v) => _likedGameIds.contains(v['id'])).toList();
+    final allGames = GameService.getAllGames();
+    return allGames.where((v) => _likedGameIds.contains(v['id'])).toList();
   }
 }
 
@@ -2603,6 +2657,130 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
+// ============================================
+// GAME SERVICE (Supabase)
+// ============================================
+
+class GameService {
+  static final _supabase = Supabase.instance.client;
+  static List<Map<String, dynamic>> _supabaseGames = [];
+
+
+  /// Fetches all games from Supabase and caches them locally.
+  static Future<void> fetchGames() async {
+    try {
+      final response = await _supabase
+          .from('games')
+          .select()
+          .order('created_at', ascending: false);
+
+      _supabaseGames = (response as List).map((game) {
+        return <String, dynamic>{
+          'id': game['id'] as int,
+          'title': game['title'] as String,
+          'video': game['video_url'] as String,
+          'gameUrl': game['game_url'] as String,
+          'creator': game['creator'] as String? ?? '@anonymous',
+          'description': game['description'] as String?,
+          'isFirebaseGame': true, // Triggers network video player
+        };
+      }).toList();
+    } catch (e) {
+      // On error, keep empty list - hardcoded games still work
+      _supabaseGames = [];
+    }
+  }
+
+  /// Returns all games: hardcoded + Supabase, merged into one list.
+  static List<Map<String, dynamic>> getAllGames() {
+    return [...videos, ..._supabaseGames];
+  }
+
+  /// Returns only Supabase-sourced games.
+  static List<Map<String, dynamic>> getSupabaseGames() {
+    return List.unmodifiable(_supabaseGames);
+  }
+
+  /// Submits a new game to Supabase.
+  /// Returns the formatted game map, or null on failure.
+  static Future<Map<String, dynamic>?> submitGame({
+    required String title,
+    required String gameUrl,
+    required String videoUrl,
+    required String creator,
+    String? description,
+  }) async {
+    try {
+      final response = await _supabase.from('games').insert({
+        'title': title,
+        'game_url': gameUrl,
+        'video_url': videoUrl,
+        'creator': creator,
+        'description': description,
+      }).select().single();
+
+      // Add to local cache immediately so it appears in feed
+      final newGame = <String, dynamic>{
+        'id': response['id'] as int,
+        'title': response['title'] as String,
+        'video': response['video_url'] as String,
+        'gameUrl': response['game_url'] as String,
+        'creator': response['creator'] as String? ?? '@anonymous',
+        'description': response['description'] as String?,
+        'isFirebaseGame': true,
+      };
+      _supabaseGames.insert(0, newGame);
+
+      return newGame;
+    } catch (e) {
+      return null;
+    }
+  }
+
+  /// Finds a game by ID across both hardcoded and Supabase games.
+  static Map<String, dynamic>? findGameById(int id) {
+    for (final v in videos) {
+      if (v['id'] == id) return v;
+    }
+    for (final v in _supabaseGames) {
+      if (v['id'] == id) return v;
+    }
+    return null;
+  }
+}
+
+// ============================================
+// YOUTUBE URL HELPERS
+// ============================================
+
+class YouTubeHelper {
+  /// Extracts the video ID from various YouTube URL formats.
+  /// Returns null if the URL is not a recognized YouTube URL.
+  static String? extractVideoId(String url) {
+    final patterns = [
+      RegExp(r'youtube\.com/watch\?v=([a-zA-Z0-9_-]{11})'),
+      RegExp(r'youtube\.com/shorts/([a-zA-Z0-9_-]{11})'),
+      RegExp(r'youtu\.be/([a-zA-Z0-9_-]{11})'),
+      RegExp(r'youtube\.com/embed/([a-zA-Z0-9_-]{11})'),
+    ];
+    for (final pattern in patterns) {
+      final match = pattern.firstMatch(url);
+      if (match != null) return match.group(1);
+    }
+    return null;
+  }
+
+  /// Returns true if the URL is a YouTube URL.
+  static bool isYouTubeUrl(String url) {
+    return extractVideoId(url) != null;
+  }
+
+  /// Returns a high-quality thumbnail URL for a YouTube video.
+  static String getThumbnailUrl(String videoId) {
+    return 'https://img.youtube.com/vi/$videoId/hqdefault.jpg';
+  }
+}
+
 final videos = [
   {'id': 3, 'title': 'Circlify', 'video': 'assets/videos/circlify_with_sound.mov', 'gameUrl': 'https://circlify-game.vercel.app/', 'creator': '@borg'},
   {'id': 4, 'title': 'aa-speed', 'video': 'assets/videos/aa_with_sound.mov', 'gameUrl': 'https://aa-game.vercel.app/', 'creator': '@varin'},
@@ -2645,9 +2823,12 @@ class _FeedScreenState extends State<FeedScreen> {
     _loadGames();
   }
 
-  void _loadGames() {
+  void _loadGames() async {
+    await GameService.fetchGames();
+    if (!mounted) return;
     setState(() {
-      shuffledVideos = List<Map<String, dynamic>>.from(videos)..shuffle();
+      shuffledVideos = List<Map<String, dynamic>>.from(GameService.getAllGames())
+        ..shuffle();
       _isLoading = false;
     });
   }
@@ -2850,8 +3031,10 @@ class VideoCard extends StatefulWidget {
 }
 
 class _VideoCardState extends State<VideoCard> {
-  late VideoPlayerController controller;
+  VideoPlayerController? controller;
   bool isInitialized = false;
+  bool _isYouTube = false;
+  String? _youTubeThumbnailUrl;
 
   @override
   void initState() {
@@ -2863,14 +3046,25 @@ class _VideoCardState extends State<VideoCard> {
     final videoPath = widget.video['video'] as String;
     final isNetworkVideo = widget.video['isFirebaseGame'] == true;
 
-    // Use network URL for Firebase games, asset path for hardcoded games
+    // Check if this is a YouTube URL
+    if (isNetworkVideo) {
+      final videoId = YouTubeHelper.extractVideoId(videoPath);
+      if (videoId != null) {
+        _isYouTube = true;
+        _youTubeThumbnailUrl = YouTubeHelper.getThumbnailUrl(videoId);
+        setState(() => isInitialized = true);
+        return;
+      }
+    }
+
+    // Use network URL for non-YouTube network videos, asset path for hardcoded games
     if (isNetworkVideo) {
       controller = VideoPlayerController.networkUrl(Uri.parse(videoPath))
         ..initialize().then((_) {
           if (mounted) {
             setState(() => isInitialized = true);
-            controller.setLooping(true);
-            if (widget.isActive) controller.play();
+            controller!.setLooping(true);
+            if (widget.isActive) controller!.play();
           }
         }).catchError((e) {
           // Handle network video load error
@@ -2883,8 +3077,8 @@ class _VideoCardState extends State<VideoCard> {
         ..initialize().then((_) {
           if (mounted) {
             setState(() => isInitialized = true);
-            controller.setLooping(true);
-            if (widget.isActive) controller.play();
+            controller!.setLooping(true);
+            if (widget.isActive) controller!.play();
           }
         });
     }
@@ -2893,16 +3087,17 @@ class _VideoCardState extends State<VideoCard> {
   @override
   void didUpdateWidget(VideoCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (controller == null) return;
     if (widget.isActive && !oldWidget.isActive) {
-      controller.play();
+      controller!.play();
     } else if (!widget.isActive && oldWidget.isActive) {
-      controller.pause();
+      controller!.pause();
     }
   }
 
   @override
   void dispose() {
-    controller.dispose();
+    controller?.dispose();
     super.dispose();
   }
 
@@ -2962,13 +3157,22 @@ class _VideoCardState extends State<VideoCard> {
                         width: double.infinity,
                         height: double.infinity,
                         child: isInitialized
-                            ? Align(
-                                alignment: Alignment.topCenter,
-                                child: AspectRatio(
-                                  aspectRatio: controller.value.aspectRatio,
-                                  child: VideoPlayer(controller),
-                                ),
-                              )
+                            ? _isYouTube
+                                ? Image.network(
+                                    _youTubeThumbnailUrl!,
+                                    fit: BoxFit.cover,
+                                    width: double.infinity,
+                                    height: double.infinity,
+                                    errorBuilder: (context, error, stackTrace) =>
+                                        const Center(child: Icon(Icons.videogame_asset, color: Colors.white54, size: 48)),
+                                  )
+                                : Align(
+                                    alignment: Alignment.topCenter,
+                                    child: AspectRatio(
+                                      aspectRatio: controller!.value.aspectRatio,
+                                      child: VideoPlayer(controller!),
+                                    ),
+                                  )
                             : const Center(child: CircularProgressIndicator(color: Colors.white)),
                       ),
                       if (isInitialized)
@@ -3362,6 +3566,7 @@ class _SubmitGameScreenState extends State<SubmitGameScreen> {
 
   bool _isVerifying = false;
   bool _isUrlVerified = false;
+  bool _isSubmitting = false;
   String? _verificationError;
 
   @override
@@ -3429,49 +3634,33 @@ class _SubmitGameScreenState extends State<SubmitGameScreen> {
       return;
     }
 
-    // Create submission details
-    final submissionText = '''
-New Game Submission for Playbite
+    setState(() => _isSubmitting = true);
 
-Game Title: ${_titleController.text.trim()}
-Game URL: ${_urlController.text.trim()}
-Description: ${_descriptionController.text.trim().isEmpty ? 'N/A' : _descriptionController.text.trim()}
-Video URL: ${_videoUrlController.text.trim().isEmpty ? 'N/A' : _videoUrlController.text.trim()}
-Creator: ${widget.creatorName}
+    final result = await GameService.submitGame(
+      title: _titleController.text.trim(),
+      gameUrl: _urlController.text.trim(),
+      videoUrl: _videoUrlController.text.trim(),
+      creator: widget.creatorName,
+      description: _descriptionController.text.trim().isEmpty
+          ? null
+          : _descriptionController.text.trim(),
+    );
 
----
-Add this to the videos list in main.dart:
-{'id': XX, 'title': '${_titleController.text.trim()}', 'video': 'assets/videos/FILENAME.mov', 'gameUrl': '${_urlController.text.trim()}', 'creator': '${widget.creatorName}'},
-''';
+    if (!mounted) return;
 
-    // Try to open email first, fall back to clipboard
-    final subject = Uri.encodeComponent('New Game Submission: ${_titleController.text.trim()}');
-    final body = Uri.encodeComponent(submissionText);
-    final emailUrl = Uri.parse('mailto:bhargav@playbite.io?subject=$subject&body=$body');
+    setState(() => _isSubmitting = false);
 
-    try {
-      if (await canLaunchUrl(emailUrl)) {
-        await launchUrl(emailUrl);
-        if (mounted) {
-          _showSuccessDialog('Your game details have been sent for review. We\'ll add it to Playbite soon!');
-        }
-      } else {
-        // Email not available - copy to clipboard instead
-        await Clipboard.setData(ClipboardData(text: submissionText));
-        if (mounted) {
-          _showSuccessDialog(
-            'Game details copied to clipboard!\n\nPlease email this to bhargav@playbite.io to complete your submission.',
-          );
-        }
-      }
-    } catch (e) {
-      // Fallback to clipboard
-      await Clipboard.setData(ClipboardData(text: submissionText));
-      if (mounted) {
-        _showSuccessDialog(
-          'Game details copied to clipboard!\n\nPlease email this to bhargav@playbite.io to complete your submission.',
-        );
-      }
+    if (result != null) {
+      _showSuccessDialog(
+        'Your game "${_titleController.text.trim()}" is now live on Playbite! Swipe through the feed to find it.',
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to submit game. Please check your connection and try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -3669,7 +3858,7 @@ Add this to the videos list in main.dart:
 
               // Video URL input
               const Text(
-                'Gameplay Video URL (Optional)',
+                'Gameplay Video URL',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
@@ -3680,7 +3869,7 @@ Add this to the videos list in main.dart:
               TextFormField(
                 controller: _videoUrlController,
                 decoration: InputDecoration(
-                  hintText: 'YouTube or Google Drive link',
+                  hintText: 'Direct link to .mp4 or .mov video',
                   filled: true,
                   fillColor: Colors.grey[100],
                   border: OutlineInputBorder(
@@ -3690,10 +3879,19 @@ Add this to the videos list in main.dart:
                 ),
                 style: const TextStyle(color: Colors.black),
                 keyboardType: TextInputType.url,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please provide a gameplay video URL';
+                  }
+                  if (!value.startsWith('http')) {
+                    return 'Please enter a valid URL';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: 8),
               Text(
-                'Upload a 15-20 second gameplay video to YouTube or Google Drive and paste the link here.',
+                'Provide a direct link to a .mp4 or .mov gameplay video (15-20 seconds). YouTube links are not supported.',
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey[500],
@@ -3704,7 +3902,7 @@ Add this to the videos list in main.dart:
 
               // Submit button
               ElevatedButton(
-                onPressed: _isUrlVerified ? _submitGame : null,
+                onPressed: (_isUrlVerified && !_isSubmitting) ? _submitGame : null,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF8B5CF6),
                   disabledBackgroundColor: Colors.grey[300],
@@ -3713,20 +3911,29 @@ Add this to the videos list in main.dart:
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Submit Game',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: _isSubmitting
+                    ? const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                        ),
+                      )
+                    : const Text(
+                        'Submit Game',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
               ),
 
               const SizedBox(height: 16),
 
               // Info text
               Text(
-                'Your game submission will be sent for review. We\'ll add approved games to Playbite!',
+                'Your game will appear in the feed immediately for all players!',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[600],
