@@ -29,17 +29,17 @@ void main() async {
   await RecentlyPlayedService.init();
   await FriendsService.init();
 
-  runApp(PlaybiteApp(showOnboarding: !onboardingComplete));
+  runApp(PlaybyteApp(showOnboarding: !onboardingComplete));
 }
 
-class PlaybiteApp extends StatelessWidget {
+class PlaybyteApp extends StatelessWidget {
   final bool showOnboarding;
-  const PlaybiteApp({super.key, required this.showOnboarding});
+  const PlaybyteApp({super.key, required this.showOnboarding});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Playbite',
+      title: 'Playbyte',
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
       home: showOnboarding ? const OnboardingScreen() : const MainNavigationScreen(),
@@ -1358,10 +1358,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
-            // Option 1: Create with Playbite Creator
+            // Option 1: Create with Playbyte Creator
             _buildOptionTile(
               icon: Icons.auto_awesome,
-              title: 'Create with Playbite Creator',
+              title: 'Create with Playbyte Creator',
               subtitle: 'Use AI to build your game',
               onTap: () {
                 Navigator.pop(context);
@@ -1369,7 +1369,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const GameScreen(
-                      title: 'Playbite Creator',
+                      title: 'Playbyte Creator',
                       gameUrl: 'https://lovable-games.fly.dev/',
                     ),
                   ),
@@ -3643,7 +3643,7 @@ class _SubmitGameScreenState extends State<SubmitGameScreen> {
 
     if (result != null) {
       _showSuccessDialog(
-        'Your game "${_titleController.text.trim()}" is now live on Playbite! Swipe through the feed to find it.',
+        'Your game "${_titleController.text.trim()}" is now live on Playbyte! Swipe through the feed to find it.',
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
