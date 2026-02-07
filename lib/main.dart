@@ -2814,6 +2814,14 @@ class _FeedScreenState extends State<FeedScreen> {
     _loadGames();
   }
 
+  @override
+  void didUpdateWidget(FeedScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.isTabActive && !oldWidget.isTabActive) {
+      _refreshGames();
+    }
+  }
+
   void _loadGames() async {
     await GameService.fetchGames();
     if (!mounted) return;
@@ -2821,6 +2829,16 @@ class _FeedScreenState extends State<FeedScreen> {
       shuffledVideos = List<Map<String, dynamic>>.from(GameService.getAllGames())
         ..shuffle();
       _isLoading = false;
+    });
+  }
+
+  Future<void> _refreshGames() async {
+    await GameService.fetchGames();
+    if (!mounted) return;
+    setState(() {
+      shuffledVideos = List<Map<String, dynamic>>.from(GameService.getAllGames())
+        ..shuffle();
+      currentIndex = 0;
     });
   }
 
@@ -2885,21 +2903,26 @@ class _FeedScreenState extends State<FeedScreen> {
       );
     }
 
-    return PageView.builder(
-      scrollDirection: Axis.vertical,
-      itemCount: shuffledVideos.length,
-      onPageChanged: (index) => setState(() => currentIndex = index),
-      itemBuilder: (context, index) {
-        return VideoCard(
-          video: shuffledVideos[index],
-          isActive: index == currentIndex && !_isGameOpen && widget.isTabActive,
-          onPlayTap: onSwipeLeft,
-          onLikeChanged: () {
-            setState(() {});
-            widget.onLikeChanged?.call();
-          },
-        );
-      },
+    return RefreshIndicator(
+      onRefresh: _refreshGames,
+      color: const Color(0xFF8B5CF6),
+      backgroundColor: Colors.grey[900],
+      child: PageView.builder(
+        scrollDirection: Axis.vertical,
+        itemCount: shuffledVideos.length,
+        onPageChanged: (index) => setState(() => currentIndex = index),
+        itemBuilder: (context, index) {
+          return VideoCard(
+            video: shuffledVideos[index],
+            isActive: index == currentIndex && !_isGameOpen && widget.isTabActive,
+            onPlayTap: onSwipeLeft,
+            onLikeChanged: () {
+              setState(() {});
+              widget.onLikeChanged?.call();
+            },
+          );
+        },
+      ),
     );
   }
 }
@@ -3665,7 +3688,7 @@ class _SubmitGameScreenState extends State<SubmitGameScreen> {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
-              Navigator.pop(context);
+              Navigator.pop(context, true);
             },
             child: const Text('Got it!'),
           ),
