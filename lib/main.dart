@@ -2835,9 +2835,10 @@ class _FeedScreenState extends State<FeedScreen> {
   Future<void> _refreshGames() async {
     await GameService.fetchGames();
     if (!mounted) return;
+    final supabaseGames = GameService.getSupabaseGames();
+    final hardcodedGames = List<Map<String, dynamic>>.from(videos)..shuffle();
     setState(() {
-      shuffledVideos = List<Map<String, dynamic>>.from(GameService.getAllGames())
-        ..shuffle();
+      shuffledVideos = [...supabaseGames, ...hardcodedGames];
       currentIndex = 0;
     });
   }
