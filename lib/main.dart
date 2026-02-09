@@ -3102,6 +3102,15 @@ class _VideoCardState extends State<VideoCard> {
   @override
   void didUpdateWidget(VideoCard oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (oldWidget.video['id'] != widget.video['id']) {
+      controller?.dispose();
+      controller = null;
+      isInitialized = false;
+      _isYouTube = false;
+      _youTubeThumbnailUrl = null;
+      _initializeController();
+      return;
+    }
     if (controller == null) return;
     if (widget.isActive && !oldWidget.isActive) {
       controller!.play();
