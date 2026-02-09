@@ -2818,7 +2818,9 @@ class _FeedScreenState extends State<FeedScreen> {
   void didUpdateWidget(FeedScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isTabActive && !oldWidget.isTabActive) {
-      _refreshGames();
+      // Just rebuild so VideoCards get isActive=true and resume playback.
+      // Pull-to-refresh handles fetching new games.
+      setState(() {});
     }
   }
 
